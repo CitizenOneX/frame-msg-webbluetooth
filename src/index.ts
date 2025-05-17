@@ -1,1 +1,2 @@
-export { FrameMsg } from './FrameMsg';
+export { FrameMsg, StdLua } from './FrameMsg';
+export { TxPlainText } from './tx/plain-text';

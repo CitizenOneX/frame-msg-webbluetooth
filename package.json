@@ -1,6 +1,7 @@
 {
   "name": "frame-msg",
   "version": "0.1.0",
+  "type": "module",
   "main": "dist/frame-msg.umd.js",
   "module": "dist/frame-msg.es.js",
   "types": "dist/index.d.ts",

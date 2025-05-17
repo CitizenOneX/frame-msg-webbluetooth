@@ -1,4 +1,5 @@
-import { FrameMsg } from 'frame-msg';
+import { FrameMsg, StdLua, TxPlainText } from 'frame-msg';
+import plainTextFrameApp from './lua/plain_text_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();
@@ -9,34 +10,54 @@ export async function run() {
   const deviceId = await frame.connect();
   console.log('Connected to:', deviceId);
 
-  // Configure print response handler to show Frame output
-  const printHandler = (data) => {
-    console.log("Frame response:", data);
-  };
-  frame.attachPrintResponseHandler(printHandler);
-
   // Send a break signal to the Frame in case it is in a loop
   console.log("Sending break signal to Frame...");
   await frame.sendBreakSignal({showMe: true});
   console.log("Break signal sent.");
 
-  // Send Lua command to Frame
-  console.log("Sending Lua command to Frame...");
-  var luaCommand = "frame.display.text('Hello, Frame!', 1, 1)frame.display.show()print('Response from Frame!')";
-  await frame.sendLua(luaCommand, {showMe: true, awaitPrint: true});
-  console.log("Lua command sent.");
+  // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
+  const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
+  console.log(`Battery Level/Memory used: ${battMem}`);
 
-  // Wait for a couple of seconds to allow the command to execute and text to be displayed
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Let the user know we're starting
+  await frame.printShortText('Loading...');
+  console.log("Printed Loading message.");
 
-  // Send Lua command to Frame
-  console.log("Sending Lua command to Frame...");
-  luaCommand = "frame.display.text('Goodbye, Frame!', 1, 1)frame.display.show()print('Response from Frame!')";
-  await frame.sendLua(luaCommand, {showMe: true, awaitPrint: true});
-  console.log("Lua command sent.");
+  // send the std lua files to Frame that handle data accumulation and text display
+  await frame.uploadStdLuaLibs([StdLua.DataMin, StdLua.PlainTextMin]);
+  console.log("Uploaded std lua libraries.");
 
-  // Wait for a couple of seconds to allow the command to execute and text to be displayed
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Send the main lua application from this project to Frame that will run the app
+  await frame.uploadFrameApp(plainTextFrameApp);
+  console.log("Uploaded frame app.");
+
+  // attach the print response handler so we can see stdout from Frame Lua print() statements
+  // If we assigned this handler before the frameside app was running,
+  // any await_print=True commands will echo the acknowledgement byte (e.g. "1"), but if we assign
+  // the handler now we'll see any lua exceptions (or stdout print statements)
+  const printHandler = (data) => {
+    console.log("Frame response:", data);
+  };
+  frame.attachPrintResponseHandler(printHandler);
+  console.log("Attached print handler.");
+
+  // "require" the main frame_app lua file to run it, and block until it has started.
+  // It signals that it is ready by sending something on the string response channel.
+  await frame.startFrameApp();
+
+  // Send the text for display on Frame
+  // Note that the frameside app is expecting a message of type TxPlainText on msgCode 0x0a
+  const displayStrings = ["red", "orange", "yellow", "red\norange\nyellow", " "];
+  for (const displayString of displayStrings) {
+    await frame.sendMessage(0x0a, new TxPlainText(displayString).pack(), true);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+  }
+
+  // unhook the print handler
+  frame.detachPrintResponseHandler()
+
+  // break out of the frame app loop and reboot Frame
+  await frame.stopFrameApp()
 
   console.log("Disconnecting from Frame...");
   await frame.disconnect();

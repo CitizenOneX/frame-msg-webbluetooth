@@ -1,4 +1,4 @@
-import { FrameBle } from 'frame-ble'; // Assuming 'frame-ble' is the npm package name
+import { FrameBle } from 'frame-ble';
 
 // --- Standard Lua Library Imports ---
 import stdDataMinLua from './lua/data.min.lua?raw';

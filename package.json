@@ -5,6 +5,18 @@
   "main": "dist/frame-msg.umd.js",
   "module": "dist/frame-msg.es.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/frame-msg.es.js",
+      "require": "./dist/frame-msg.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",

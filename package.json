@@ -7,9 +7,9 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/frame-msg.es.js",
-      "require": "./dist/frame-msg.umd.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/frame-msg.umd.js"
     }
   },
   "files": [

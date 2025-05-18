@@ -3,5 +3,6 @@ export { TxPlainText } from './tx/plain-text';
 export { TxCaptureSettings } from './tx/capture-settings';
 export { TxCode } from './tx/code';
 export { TxSprite } from './tx/sprite';
+export { TxSpriteCoords } from './tx/sprite-coords';
 export { RxTap } from './rx/tap';
 export { RxPhoto } from './rx/photo';

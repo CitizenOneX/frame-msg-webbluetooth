@@ -2,14 +2,18 @@ import { FrameBle } from 'frame-ble';
 
 // --- Standard Lua Library Imports ---
 import stdDataMinLua from './lua/data.min.lua?raw';
+import stdCodeMinLua from './lua/code.min.lua?raw';
 import stdPlainTextMinLua from './lua/plain_text.min.lua?raw';
+import stdTapMinLua from './lua/tap.min.lua?raw';
 
 /**
  * Enum representing the available standard Lua libraries that can be uploaded.
  */
 export enum StdLua {
     DataMin = "stdDataMin",
+    CodeMin = "stdCodeMin",
     PlainTextMin = "stdPlainTextMin",
+    TapMin = "stdTapMin",
 }
 
 // Internal mapping from the enum to the actual Lua content and target filename
@@ -20,7 +24,9 @@ interface StdLibDetails {
 
 const standardLuaLibrarySources: Record<StdLua, StdLibDetails> = {
     [StdLua.DataMin]: { content: stdDataMinLua, targetFileName: 'data.min.lua' },
+    [StdLua.CodeMin]: { content: stdCodeMinLua, targetFileName: 'code.min.lua' },
     [StdLua.PlainTextMin]: { content: stdPlainTextMinLua, targetFileName: 'plain_text.min.lua' },
+    [StdLua.TapMin]: { content: stdTapMinLua, targetFileName: 'tap.min.lua' },
 };
 
 

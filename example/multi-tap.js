@@ -1,5 +1,5 @@
-import { FrameMsg, StdLua, TxPlainText } from 'frame-msg';
-import plainTextFrameApp from './lua/plain_text_frame_app.lua?raw';
+import { FrameMsg, StdLua, TxCode, RxTap } from 'frame-msg';
+import frameApp from './lua/tap_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();
@@ -21,11 +21,11 @@ export async function run() {
     // Let the user know we're starting
     await frame.printShortText('Loading...');
 
-    // send the std lua files to Frame that handle data accumulation and text display
-    await frame.uploadStdLuaLibs([StdLua.DataMin, StdLua.PlainTextMin]);
+    // send the std lua files to Frame
+    await frame.uploadStdLuaLibs([StdLua.DataMin, StdLua.PlainTextMin, StdLua.CodeMin, StdLua.TapMin]);
 
     // Send the main lua application from this project to Frame that will run the app
-    await frame.uploadFrameApp(plainTextFrameApp);
+    await frame.uploadFrameApp(frameApp);
 
     // attach the print response handler so we can see stdout from Frame Lua print() statements
     // If we assigned this handler before the frameside app was running,
@@ -37,13 +37,25 @@ export async function run() {
     // It signals that it is ready by sending something on the string response channel.
     await frame.startFrameApp();
 
-    // Send the text for display on Frame
-    // Note that the frameside app is expecting a message of type TxPlainText on msgCode 0x0a
-    const displayStrings = ["red", "orange", "yellow", "red\norange\nyellow", " "];
-    for (const displayString of displayStrings) {
-      await frame.sendMessage(0x0a, new TxPlainText(displayString).pack());
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+    // hook up the RxTap receiver
+    var rxTap = new RxTap();
+    var tapQueue = await rxTap.attach(frame);
+
+    // Subscribe for tap events
+    await frame.sendMessage(0x10, new TxCode(1).pack());
+
+    // iterate 10 times
+    for (let i = 0; i < 10; i++) {
+      // wait for a multi-tap event
+      var tapCount = await tapQueue.get();
+      console.log(`${tapCount}-tap received`);
     }
+
+    // unsubscribe from tap events
+    await frame.sendMessage(0x10, new TxCode(0).pack());
+
+    // stop the tap listener and clean up its resources
+    rxTap.detach(frame);
 
     // unhook the print handler
     frame.detachPrintResponseHandler()

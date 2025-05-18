@@ -23,7 +23,7 @@ export class TxCaptureSettings {
      * @param resolution Image resolution (256-720, must be even). Defaults to 512.
      * @param qualityIndex Index into [VERY_LOW, LOW, MEDIUM, HIGH, VERY_HIGH]. Defaults to 4.
      * @param pan Image pan value (-140 to 140). Defaults to 0.
-     * @param raw Whether to capture in RAW format. Defaults to false.
+     * @param raw Whether to return the JPEG in raw (headerless) format. Defaults to false.
      */
     constructor(
         resolution: number = 512,

@@ -1,4 +1,4 @@
-import { FrameMsg } from '../FrameMsg';
+import { FrameMsg } from '../frame-msg';
 import jpeg from 'jpeg-js';
 
 // A simple Promise-based queue, similar to the one in tap.ts

@@ -1,4 +1,4 @@
-import { FrameMsg } from '../FrameMsg';
+import { FrameMsg } from '../frame-msg';
 
 // A simple Promise-based queue
 class AsyncQueue<T> {

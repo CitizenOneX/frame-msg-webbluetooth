@@ -5,7 +5,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.ts',
-      name: 'FrameMsg',
+      name: 'frame-msg',
       fileName: (format) => `frame-msg.${format}.js`,
       formats: ['umd', 'es'],
     },

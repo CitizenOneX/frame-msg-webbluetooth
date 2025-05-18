@@ -1,4 +1,5 @@
 import { FrameMsg } from '../FrameMsg';
+import jpeg from 'jpeg-js';
 
 // A simple Promise-based queue, similar to the one in tap.ts
 class AsyncQueue<T> {
@@ -173,19 +174,11 @@ export class RxPhoto {
         }
 
         if (this.upright) {
-            // TODO: Image Rotation
-            // The Python code uses PIL (Pillow) to rotate the image -90 degrees.
-            // In JavaScript, you would need an image manipulation library for this.
-            // For example, using a library like 'jimp' or 'pica' with OffscreenCanvas:
-            // 1. Decode `finalImageBytes` into an image object.
-            // 2. Rotate the image.
-            // 3. Encode the rotated image back into JPEG `Uint8Array`.
-            // As a placeholder, we'll just log and pass the original bytes.
-            console.warn("RxPhoto: Image rotation is enabled but requires a JS image manipulation library. Skipping rotation.");
-            // finalImageBytes = await rotateImageBytes(finalImageBytes, -90); // Placeholder for actual rotation
+            console.log("Rotating image 90 degrees counter-clockwise");
+            this.queue.put(await this.rotateJpeg90CounterClockwise(finalImageBytes));
+        } else {
+            this.queue.put(finalImageBytes);
         }
-
-        await this.queue.put(finalImageBytes);
     }
 
     public async attach(frame: FrameMsg): Promise<AsyncQueue<Uint8Array>> {
@@ -220,14 +213,64 @@ export class RxPhoto {
         this.queue = null;
         this._imageDataChunks = [];
     }
-}
 
-// Example of a placeholder rotation function (requires a library)
-// async function rotateImageBytes(imageBytes: Uint8Array, angle: number): Promise<Uint8Array> {
-//     // Implementation using a library like Jimp:
-//     // const image = await Jimp.read(Buffer.from(imageBytes));
-//     // image.rotate(angle);
-//     // return await image.getBufferAsync(Jimp.MIME_JPEG);
-//     console.warn("rotateImageBytes: Actual rotation not implemented.");
-//     return imageBytes; // Return original bytes as placeholder
-// }
+    /**
+     * Rotates a JPEG image 90 degrees counter-clockwise using an offscreen canvas.
+     * @param inputBytes The input JPEG image as a Uint8Array.
+     * @returns the rotated JPEG image as a Uint8Array.
+     */
+    async rotateJpeg90CounterClockwise(inputBytes: Uint8Array): Promise<Uint8Array> {
+        // Decode JPEG into raw RGBA pixel data
+        const rawImageData = jpeg.decode(inputBytes, { useTArray: true });
+
+        if (!rawImageData || !rawImageData.data || !rawImageData.width || !rawImageData.height) {
+            throw new Error('Failed to decode JPEG image.');
+        }
+
+        // Set up canvas with rotated dimensions
+        const canvas = document.createElement('canvas');
+        canvas.width = rawImageData.height;  // Swapped dimensions
+        canvas.height = rawImageData.width;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            throw new Error('Failed to get canvas 2D context.');
+        }
+
+        // Create a temporary canvas to hold the original image
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = rawImageData.width;
+        tempCanvas.height = rawImageData.height;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        if (!tempCtx) {
+            throw new Error('Failed to get temporary canvas 2D context.');
+        }
+
+        // Put the original image data into the temporary canvas
+        tempCtx.putImageData(new ImageData(
+            new Uint8ClampedArray(rawImageData.data.buffer),
+            rawImageData.width,
+            rawImageData.height
+        ), 0, 0);
+
+        // Clear the destination canvas and apply rotation
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.translate(0, canvas.height);  // Change translation point
+        ctx.rotate(-90 * Math.PI / 180);  // Keep -90 for counter-clockwise
+
+        // Draw the temporary canvas onto the rotated context
+        ctx.drawImage(tempCanvas, 0, 0);
+
+        // Convert canvas content back to JPEG blob
+        const blob: Blob = await new Promise((resolve, reject) => {
+            canvas.toBlob((b) => {
+                if (b) resolve(b);
+                else reject(new Error('Failed to convert canvas to JPEG blob.'));
+            }, 'image/jpeg');
+        });
+
+        const arrayBuffer = await blob.arrayBuffer();
+        return new Uint8Array(arrayBuffer);
+    }
+}

@@ -22,7 +22,7 @@ export async function run() {
     await frame.printShortText('Loading...');
 
     // send the std lua files to Frame
-    await frame.uploadStdLuaLibs([StdLua.DataMin, StdLua.PlainTextMin, StdLua.CodeMin, StdLua.TapMin]);
+    await frame.uploadStdLuaLibs([StdLua.DataMin, StdLua.CodeMin, StdLua.TapMin]);
 
     // Send the main lua application from this project to Frame that will run the app
     await frame.uploadFrameApp(frameApp);

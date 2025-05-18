@@ -5,6 +5,7 @@ import stdDataMinLua from './lua/data.min.lua?raw';
 import stdCameraMinLua from './lua/camera.min.lua?raw';
 import stdCodeMinLua from './lua/code.min.lua?raw';
 import stdPlainTextMinLua from './lua/plain_text.min.lua?raw';
+import stdSpriteMinLua from './lua/sprite.min.lua?raw';
 import stdTapMinLua from './lua/tap.min.lua?raw';
 
 /**
@@ -15,6 +16,7 @@ export enum StdLua {
     CameraMin = "stdCameraMin",
     CodeMin = "stdCodeMin",
     PlainTextMin = "stdPlainTextMin",
+    SpriteMin = "stdSpriteMin",
     TapMin = "stdTapMin",
 }
 
@@ -29,6 +31,7 @@ const standardLuaLibrarySources: Record<StdLua, StdLibDetails> = {
     [StdLua.CameraMin]: { content: stdCameraMinLua, targetFileName: 'camera.min.lua' },
     [StdLua.CodeMin]: { content: stdCodeMinLua, targetFileName: 'code.min.lua' },
     [StdLua.PlainTextMin]: { content: stdPlainTextMinLua, targetFileName: 'plain_text.min.lua' },
+    [StdLua.SpriteMin]: { content: stdSpriteMinLua, targetFileName: 'sprite.min.lua' },
     [StdLua.TapMin]: { content: stdTapMinLua, targetFileName: 'tap.min.lua' },
 };
 

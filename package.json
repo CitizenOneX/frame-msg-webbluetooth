@@ -25,6 +25,6 @@
   },
   "dependencies": {
     "jpeg-js": "^0.4.4",
-    "frame-ble": "../frame-ble-webbluetooth"
+    "frame-ble": "github:CitizenOneX/frame-ble-webbluetooth"
   }
 }

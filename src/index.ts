@@ -2,6 +2,7 @@ export { FrameMsg, StdLua } from './frame-msg';
 export { TxPlainText } from './tx/plain-text';
 export { TxCaptureSettings } from './tx/capture-settings';
 export { TxCode } from './tx/code';
+export { TxImageSpriteBlock } from './tx/image-sprite-block';
 export { TxSprite } from './tx/sprite';
 export { TxSpriteCoords } from './tx/sprite-coords';
 export { RxTap } from './rx/tap';

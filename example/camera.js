@@ -50,7 +50,7 @@ export async function run() {
     // Request the photo by sending a TxCaptureSettings message
     await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
 
-    // get the jpeb bytes as soon as they're ready
+    // get the jpeg bytes as soon as they're ready
     const jpegBytes = await photoQueue.get();
     console.log("Photo received, length:", jpegBytes.length);
 

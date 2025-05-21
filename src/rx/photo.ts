@@ -1,7 +1,7 @@
 import { FrameMsg } from '../frame-msg';
 import jpeg from 'jpeg-js';
 
-// A simple Promise-based queue, similar to the one in tap.ts
+// A simple Promise-based queue
 class AsyncQueue<T> {
     private promises: Promise<T>[];
     private resolvers: ((value: T | PromiseLike<T>) => void)[];

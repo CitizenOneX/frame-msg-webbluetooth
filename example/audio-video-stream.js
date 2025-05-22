@@ -1,18 +1,25 @@
 import { FrameMsg, StdLua, TxCode, TxCaptureSettings, RxAudio, RxPhoto } from 'frame-msg';
 import frameApp from './lua/audio_video_frame_app.lua?raw';
 
-
-// --- Helper function to convert 16-bit PCM to Float32Array ---
-function pcm16BitToFloat32(uint8Array) {
-    const numSamples = uint8Array.length / 2;
-    const int16Array = new Int16Array(numSamples);
-    const dataView = new DataView(uint8Array.buffer, uint8Array.byteOffset, uint8Array.byteLength);
-    for (let i = 0; i < numSamples; i++) {
-        int16Array[i] = dataView.getInt16(i * 2, true); // true for little-endian
-    }
+// --- Helper function to convert signed 8-bit PCM to Float32Array ---
+function pcm8BitToFloat32(uint8Array) {
+    const numSamples = uint8Array.length;
     const float32Array = new Float32Array(numSamples);
+
+    // reinterpret the raw Uint8Array as a signed byte array
+    const int8Array = new Int8Array(uint8Array.buffer, uint8Array.byteOffset, numSamples);
+
+    // Convert each sample to a float in the range [-1.0, 1.0]
     for (let i = 0; i < numSamples; i++) {
-        float32Array[i] = int16Array[i] / 32768.0; // Scale to [-1.0, 1.0]
+        // in normal usage, the mic only uses about half of the dynamic range
+        // so to scale the 8-bit signed value to a float in the range [-1.0, 1.0]
+        // we divide by 64 instead of 128, then clamp to [-1.0, 1.0]
+        float32Array[i] = int8Array[i] / 64.0;
+        if (float32Array[i] < -1.0) {
+            float32Array[i] = -1.0;
+        } else if (float32Array[i] > 1.0) {
+            float32Array[i] = 1.0;
+        }
     }
     return float32Array;
 }
@@ -106,11 +113,11 @@ async function runAudioProcessing(frame, audioQueue, pcmPlayerNode, getKeepRunni
             }
 
             if (audioSamples.length > 0 && pcmPlayerNode && pcmPlayerNode.port) {
-                const float32Chunk = pcm16BitToFloat32(audioSamples);
+                const float32Chunk = pcm8BitToFloat32(audioSamples);
                 pcmPlayerNode.port.postMessage(float32Chunk);
             }
         }
-    } catch (error) { // Catch errors from operations like pcm16BitToFloat32 or other unexpected issues
+    } catch (error) { // Catch errors from operations like pcm8BitToFloat32 or other unexpected issues
         console.error("Unhandled error in audio processing loop:", error);
         if (getKeepRunning()) signalShutdown(); // Signal shutdown if an unexpected error occurs
     } finally {

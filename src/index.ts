@@ -7,5 +7,6 @@ export { TxImageSpriteBlock } from './tx/image-sprite-block';
 export { TxSprite } from './tx/sprite';
 export { TxSpriteCoords } from './tx/sprite-coords';
 export { RxAudio } from './rx/audio';
+export { RxIMU } from './rx/imu';
 export { RxTap } from './rx/tap';
 export { RxPhoto } from './rx/photo';

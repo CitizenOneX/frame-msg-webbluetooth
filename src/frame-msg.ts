@@ -5,6 +5,7 @@ import stdDataMinLua from './lua/data.min.lua?raw';
 import stdAudioMinLua from './lua/audio.min.lua?raw';
 import stdCameraMinLua from './lua/camera.min.lua?raw';
 import stdCodeMinLua from './lua/code.min.lua?raw';
+import stdIMUMinLua from './lua/imu.min.lua?raw';
 import stdImageSpriteBlockMinLua from './lua/image_sprite_block.min.lua?raw';
 import stdPlainTextMinLua from './lua/plain_text.min.lua?raw';
 import stdSpriteMinLua from './lua/sprite.min.lua?raw';
@@ -19,6 +20,7 @@ export enum StdLua {
     AudioMin = "stdAudioMin",
     CameraMin = "stdCameraMin",
     CodeMin = "stdCodeMin",
+    IMUMin = "stdIMUMin",
     ImageSpriteBlockMin = "stdImageSpriteBlockMin",
     PlainTextMin = "stdPlainTextMin",
     SpriteMin = "stdSpriteMin",
@@ -37,6 +39,7 @@ const standardLuaLibrarySources: Record<StdLua, StdLibDetails> = {
     [StdLua.AudioMin]: { content: stdAudioMinLua, targetFileName: 'audio.min.lua' },
     [StdLua.CameraMin]: { content: stdCameraMinLua, targetFileName: 'camera.min.lua' },
     [StdLua.CodeMin]: { content: stdCodeMinLua, targetFileName: 'code.min.lua' },
+    [StdLua.IMUMin]: { content: stdIMUMinLua, targetFileName: 'imu.min.lua' },
     [StdLua.ImageSpriteBlockMin]: { content: stdImageSpriteBlockMinLua, targetFileName: 'image_sprite_block.min.lua' },
     [StdLua.PlainTextMin]: { content: stdPlainTextMinLua, targetFileName: 'plain_text.min.lua' },
     [StdLua.SpriteMin]: { content: stdSpriteMinLua, targetFileName: 'sprite.min.lua' },

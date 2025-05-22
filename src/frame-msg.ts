@@ -55,6 +55,13 @@ interface DataResponseSubscriber {
     handler: FrameMsgDataHandler;
 }
 
+/**
+ * FrameMsg class handles communication with the Frame device.
+ * It wraps the FrameBle class and provides higher-level methods for uploading standard Lua libraries
+ * and Frame applications.
+ * It also manages the registration and unregistration of data response handlers for different Rx message types.
+ * Subscribers can register their own handlers for specific message codes.
+ */
 export class FrameMsg {
     public ble: FrameBle;
     private dataResponseHandlers: Map<number, Array<DataResponseSubscriber>>;

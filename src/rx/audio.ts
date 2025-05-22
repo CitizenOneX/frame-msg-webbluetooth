@@ -1,65 +1,5 @@
 import { FrameMsg } from '../frame-msg';
-
-// A simple Promise-based queue
-class AsyncQueue<T> {
-    private promises: Promise<T>[];
-    private resolvers: ((value: T | PromiseLike<T>) => void)[];
-
-    constructor() {
-        this.promises = [];
-        this.resolvers = [];
-    }
-
-    private add(): void {
-        this.promises.push(new Promise<T>(resolve => {
-            this.resolvers.push(resolve);
-        }));
-    }
-
-    put(value: T): void { //
-        if (!this.resolvers.length) {
-            this.add();
-        }
-        const resolve = this.resolvers.shift();
-        if (resolve) {
-            resolve(value);
-        }
-    }
-
-    async get(): Promise<T> { //
-        if (!this.promises.length) {
-            this.add();
-        }
-        const promise = this.promises.shift();
-        if (promise) {
-            return promise;
-        }
-        // Fallback, should ideally not be reached with current logic
-        return new Promise<T>(resolve => {
-            this.resolvers.push(resolve);
-            // This recursive call to this.get() inside the new Promise constructor might lead to deeper call stacks than intended.
-            // A safer fallback might be to re-add and return the new promise directly.
-            // For now, sticking to the provided AsyncQueue structure.
-            this.promises.push(this.get());
-        });
-    }
-
-    isEmpty(): boolean { //
-        return this.promises.length === 0;
-    }
-
-    size(): number { //
-        return this.promises.length;
-    }
-
-    clear(): void { //
-        // Properly clear the queue by rejecting pending promises to avoid unhandled rejections
-        // For simplicity, as in RxPhoto, we'll just clear them. Consumers should be aware.
-        this.promises = [];
-        this.resolvers = [];
-    }
-}
-
+import { AsyncQueue } from '../async-queue';
 
 export interface RxAudioOptions {
     nonFinalChunkFlag?: number;
@@ -67,6 +7,14 @@ export interface RxAudioOptions {
     streaming?: boolean;
 }
 
+/**
+ * RxAudio class handles audio data streaming and processing.
+ * It can operate in two modes: streaming and single-clip mode.
+ * In streaming mode, it processes audio data in real-time.
+ * In single-clip mode, it accumulates audio data until a final chunk is received.
+ * The class provides methods to attach and detach from a FrameMsg instance,
+ * and to convert PCM data to WAV format.
+ */
 export class RxAudio {
     private nonFinalChunkFlag: number;
     private finalChunkFlag: number;

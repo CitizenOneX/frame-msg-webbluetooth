@@ -1,65 +1,7 @@
 import { FrameMsg } from '../frame-msg';
+import { AsyncQueue } from '../async-queue';
+
 import jpeg from 'jpeg-js';
-
-// A simple Promise-based queue
-class AsyncQueue<T> {
-    private promises: Promise<T>[];
-    private resolvers: ((value: T | PromiseLike<T>) => void)[];
-
-    constructor() {
-        this.promises = [];
-        this.resolvers = [];
-    }
-
-    private add(): void {
-        this.promises.push(new Promise<T>(resolve => {
-            this.resolvers.push(resolve);
-        }));
-    }
-
-    put(value: T): void {
-        if (!this.resolvers.length) {
-            this.add();
-        }
-        const resolve = this.resolvers.shift();
-        if (resolve) {
-            resolve(value);
-        }
-    }
-
-    async get(): Promise<T> {
-        if (!this.promises.length) {
-            this.add();
-        }
-        const promise = this.promises.shift();
-        if (promise) {
-            return promise;
-        }
-        // Fallback, should ideally not be reached with current logic
-        return new Promise<T>(resolve => {
-            this.resolvers.push(resolve);
-            this.promises.push(this.get());
-        });
-    }
-
-    isEmpty(): boolean {
-        return this.promises.length === 0;
-    }
-
-    size(): number {
-        return this.promises.length;
-    }
-
-    clear(): void {
-        // Properly clear the queue by rejecting pending promises to avoid unhandled rejections
-        this.resolvers.forEach(resolve => {
-            // It's tricky to "cancel" a promise from outside without a specific mechanism.
-            // For simplicity, we'll just clear them. Consumers should be aware.
-        });
-        this.promises = [];
-        this.resolvers = [];
-    }
-}
 
 export type JpegQuality = 'VERY_LOW' | 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
 
@@ -72,6 +14,13 @@ export interface RxPhotoOptions {
     resolution?: number | null; // even number between 100 and 720 inclusive
 }
 
+/**
+ * RxPhoto class handles JPEG image data streaming and processing.
+ * It can process JPEG images with or without a header ("raw" mode), although at least one
+ * compatible JPEG header must be cached before using raw mode.
+ * It can also rotate images 90 degrees counter-clockwise to upright (default behavior).
+ * Different JPEG qualities and resolutions can be specified.
+ */
 export class RxPhoto {
     private static _jpegHeaderMap: Record<string, Uint8Array> = {};
 

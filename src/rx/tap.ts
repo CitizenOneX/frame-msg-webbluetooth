@@ -1,60 +1,13 @@
 import { FrameMsg } from '../frame-msg';
+import { AsyncQueue } from '../async-queue';
 
-// A simple Promise-based queue
-class AsyncQueue<T> {
-    private promises: Promise<T>[];
-    private resolvers: ((value: T | PromiseLike<T>) => void)[];
-
-    constructor() {
-        this.promises = [];
-        this.resolvers = [];
-    }
-
-    private add(): void {
-        this.promises.push(new Promise<T>(resolve => {
-            this.resolvers.push(resolve);
-        }));
-    }
-
-    put(value: T): void {
-        if (!this.resolvers.length) {
-            this.add();
-        }
-        const resolve = this.resolvers.shift();
-        if (resolve) {
-            resolve(value);
-        }
-    }
-
-    async get(): Promise<T> {
-        if (!this.promises.length) {
-            this.add();
-        }
-        const promise = this.promises.shift();
-        if (promise) {
-            return promise;
-        }
-        // Should not happen with the current logic, but as a fallback:
-        return new Promise<T>(resolve => {
-            this.resolvers.push(resolve);
-            this.promises.push(this.get()); // Re-queue the getter
-        });
-    }
-
-    isEmpty(): boolean {
-        return this.promises.length === 0;
-    }
-
-    size(): number {
-        return this.promises.length;
-    }
-
-    clear(): void {
-        this.promises = [];
-        this.resolvers = [];
-    }
-}
-
+/**
+ * RxTap class handles tap events from the device.
+ * It counts the number of taps within a specified threshold time.
+ * It uses a queue to manage tap events and provides methods to attach and detach from a FrameMsg instance.
+ * It also debounces taps that occur too close together (40ms).
+ * The tap count is reset if no taps are detected within the threshold time.
+ */
 export class RxTap {
     private tapFlag: number;
     private threshold: number; // in milliseconds

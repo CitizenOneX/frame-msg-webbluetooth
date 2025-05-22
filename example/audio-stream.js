@@ -210,6 +210,7 @@ export async function run() {
         // Stop the Lua app and disconnect from Frame
         if (frame.isConnected()) {
             try {
+                frame.detachPrintResponseHandler();
                 await frame.stopFrameApp();
                 await frame.disconnect();
                 console.log("Disconnected from Frame.");

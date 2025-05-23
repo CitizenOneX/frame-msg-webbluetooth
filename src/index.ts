@@ -8,7 +8,7 @@ export { TxImageSpriteBlock } from './tx/image-sprite-block';
 export { TxSprite } from './tx/sprite';
 export { TxSpriteCoords } from './tx/sprite-coords';
 
-export { RxAudio } from './rx/audio';
+export { RxAudio, RxAudioBitDepth, RxAudioSampleRate } from './rx/audio';
 export type { RxAudioOptions } from './rx/audio';
 export { RxIMU, IMUData } from './rx/imu';
 export type { RxIMUOptions, IMURawData } from './rx/imu';

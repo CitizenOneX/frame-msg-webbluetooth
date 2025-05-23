@@ -1,21 +1,47 @@
-import { FrameMsg, StdLua, RxAudio, TxCode } from 'frame-msg';
+import { FrameMsg, StdLua, TxCode, RxAudio, RxAudioSampleRate, RxAudioBitDepth } from 'frame-msg';
 import frameApp from './lua/audio_frame_app.lua?raw';
 
-// Helper function to convert 16-bit PCM (as Uint8Array) to Float32Array
-// Assumes little-endian 16-bit signed integers.
-function pcm16BitToFloat32(uint8Array) {
-    // Ensure the Uint8Array's buffer is correctly aligned and sized for Int16Array view
-    const numSamples = uint8Array.length / 2;
-    const int16Array = new Int16Array(numSamples);
-    const dataView = new DataView(uint8Array.buffer, uint8Array.byteOffset);
-
-    for (let i = 0; i < numSamples; i++) {
-        int16Array[i] = dataView.getInt16(i * 2, true); // true for little-endian
-    }
-
+// --- Helper function to convert signed 8-bit PCM (provided as a raw uint8 array) to Float32Array ---
+function pcm8BitToFloat32(uint8Array) {
+    const numSamples = uint8Array.length;
     const float32Array = new Float32Array(numSamples);
+
+    // reinterpret the raw Uint8Array as a signed byte array
+    const int8Array = new Int8Array(uint8Array.buffer, uint8Array.byteOffset, numSamples);
+
+    // Convert each sample to a float in the range [-1.0, 1.0]
     for (let i = 0; i < numSamples; i++) {
-        float32Array[i] = int16Array[i] / 32768.0; // Scale to [-1.0, 1.0]
+        // in normal usage, the mic only uses about half of the dynamic range
+        // so to scale the 8-bit signed value to a float in the range [-1.0, 1.0]
+        // we divide by 64 instead of 128, then clamp to [-1.0, 1.0]
+        float32Array[i] = int8Array[i] / 64.0;
+        if (float32Array[i] < -1.0) {
+            float32Array[i] = -1.0;
+        } else if (float32Array[i] > 1.0) {
+            float32Array[i] = 1.0;
+        }
+    }
+    return float32Array;
+}
+
+// --- Helper function to convert signed 16-bit PCM (provided as a raw uint8 array) to Float32Array ---
+function pcm16BitToFloat32(uint8Array) {
+    const numSamples = uint8Array.length / 2;
+    const float32Array = new Float32Array(numSamples);
+    const dataView = new DataView(uint8Array.buffer, uint8Array.byteOffset, uint8Array.byteLength);
+
+    for (let i = 0; i < numSamples; i++) {
+        const int16Value = dataView.getInt16(i * 2);
+        // in normal usage, the mic only uses about half of the dynamic range
+        // so to scale the 16-bit signed value to a float in the range [-1.0, 1.0]
+        // we divide by 16384 instead of 32768, then clamp to [-1.0, 1.0]
+        let floatValue = int16Value / 16384.0; // Scale to [-1.0, 1.0]
+        if (floatValue < -1.0) {
+            floatValue = -1.0;
+        } else if (floatValue > 1.0) {
+            floatValue = 1.0;
+        }
+        float32Array[i] = floatValue;
     }
     return float32Array;
 }
@@ -30,7 +56,7 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
         this._totalSamplesQueued = 0;
         // Buffer up to a few seconds of audio to handle network jitter, etc.
         // 8000Hz * 1 channel * 5 seconds = 40000 samples
-        this._maxBufferedSamples = (options.processorOptions.sampleRate || sampleRate || 8000) * 5;
+        this._maxBufferedSamples = (sampleRate || 8000) * 5;
 
 
         this.port.onmessage = (event) => {
@@ -85,9 +111,10 @@ export async function run() {
     let keepStreaming = true; // Flag to control the streaming loop
 
     // --- IMPORTANT AUDIO PARAMETERS ---
-    // These should match the audio source from your Frame device
-    const SAMPLE_RATE = 8000; // e.g., 8000 Hz, 16000 Hz, etc.
-    // const CHANNELS = 1; // Assuming mono
+    // These should match the microphone.start call in the Lua app './lua/audio_frame_app.lua'
+    const sampleRate = RxAudioSampleRate.SAMPLE_RATE_8KHZ;
+    const bitDepth = RxAudioBitDepth.BIT_DEPTH_8;
+    console.log("Sample rate:", sampleRate);
 
     try {
         console.log("Connecting to Frame...");
@@ -107,7 +134,7 @@ export async function run() {
 
         // 1. Setup Web Audio API
         audioContext = new (window.AudioContext || window.webkitAudioContext)({
-            sampleRate: SAMPLE_RATE // Set the sample rate for the AudioContext
+            sampleRate: sampleRate // Set the sample rate for the AudioContext
         });
 
         // Create a Blob URL for the AudioWorklet processor
@@ -117,13 +144,11 @@ export async function run() {
         await audioContext.audioWorklet.addModule(processorUrl);
         URL.revokeObjectURL(processorUrl); // Clean up Blob URL once module is loaded
 
-        pcmPlayerNode = new AudioWorkletNode(audioContext, 'pcm-player-processor', {
-            processorOptions: { sampleRate: SAMPLE_RATE }
-        });
+        pcmPlayerNode = new AudioWorkletNode(audioContext, 'pcm-player-processor');
         pcmPlayerNode.connect(audioContext.destination);
 
         // 2. Setup RxAudio for streaming
-        rxAudio = new RxAudio({ streaming: true }); // Initialize in streaming mode
+        rxAudio = new RxAudio({ streaming: true, sampleRate: sampleRate, bitDepth: bitDepth }); // Initialize in streaming mode
         audioQueue = await rxAudio.attach(frame); //
 
         // 3. Tell Frame to start sending audio data
@@ -147,8 +172,13 @@ export async function run() {
                 }
 
                 if (chunk.length > 0 && pcmPlayerNode && keepStreaming) {
-                    const float32Chunk = pcm16BitToFloat32(chunk);
-                    pcmPlayerNode.port.postMessage(float32Chunk);
+                    if (chunk instanceof Int8Array) {
+                        const float32Chunk = pcm8BitToFloat32(chunk);
+                        pcmPlayerNode.port.postMessage(float32Chunk);
+                    } else if (chunk instanceof Int16Array) {
+                        const float32Chunk = pcm16BitToFloat32(chunk);
+                        pcmPlayerNode.port.postMessage(float32Chunk);
+                    }
                 }
             }
             console.log("Audio processing loop finished.");

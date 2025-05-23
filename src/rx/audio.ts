@@ -1,10 +1,26 @@
 import { FrameMsg } from '../frame-msg';
 import { AsyncQueue } from '../async-queue';
 
+// enums for sample rate (8000 and 16000 only)
+export enum RxAudioSampleRate {
+    SAMPLE_RATE_8KHZ = 8000,
+    SAMPLE_RATE_16KHZ = 16000,
+}
+
+// enums for bit depth (8 and 16 only)
+export enum RxAudioBitDepth {
+    BIT_DEPTH_8 = 8,
+    BIT_DEPTH_16 = 16,
+}
+
+// constructor options
+// now includes sample rate and bit depth
 export interface RxAudioOptions {
     nonFinalChunkFlag?: number;
     finalChunkFlag?: number;
     streaming?: boolean;
+    sampleRate?: RxAudioSampleRate;
+    bitDepth?: RxAudioBitDepth;
 }
 
 /**
@@ -14,19 +30,25 @@ export interface RxAudioOptions {
  * In single-clip mode, it accumulates audio data until a final chunk is received.
  * The class provides methods to attach and detach from a FrameMsg instance,
  * and to convert PCM data to WAV format.
+ * Depending on how it is constructed, it will return samples as either
+ * signed 8 or signed 16 bit integers, and the source bit depth in Lua should match.
  */
 export class RxAudio {
     private nonFinalChunkFlag: number;
     private finalChunkFlag: number;
     private streaming: boolean;
+    private bitDepth: number; // 8 or 16
+    private sampleRate: RxAudioSampleRate; // 8000 or 16000
 
-    public queue: AsyncQueue<Uint8Array | null> | null;
+    public queue: AsyncQueue<Int8Array | Int16Array | null> | null;
     private _audioBuffer: Uint8Array[]; // Used to accumulate chunks in non-streaming mode
 
     constructor(options: RxAudioOptions = {}) {
-        this.nonFinalChunkFlag = options.nonFinalChunkFlag ?? 0x05; //
-        this.finalChunkFlag = options.finalChunkFlag ?? 0x06; //
-        this.streaming = options.streaming ?? false; //
+        this.nonFinalChunkFlag = options.nonFinalChunkFlag ?? 0x05;
+        this.finalChunkFlag = options.finalChunkFlag ?? 0x06;
+        this.streaming = options.streaming ?? false; // Default to clip mode
+        this.sampleRate = options.sampleRate ?? RxAudioSampleRate.SAMPLE_RATE_8KHZ; // Default to 8000 Hz
+        this.bitDepth = options.bitDepth ?? RxAudioBitDepth.BIT_DEPTH_8; // Default to 8 bits
 
         this.queue = null;
         this._audioBuffer = []; //
@@ -57,7 +79,7 @@ export class RxAudio {
 
         if (this.streaming) { //
             if (chunk.length > 0) {
-                this.queue.put(chunk); //
+                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(chunk) : Int16Array.from(chunk));
             }
             if (flag === this.finalChunkFlag) {
                 this.queue.put(null); // Signal end of stream
@@ -70,14 +92,14 @@ export class RxAudio {
                 const completeAudio = this.concatenateAudioData();
                 this._audioBuffer = []; // Reset buffer
 
-                this.queue.put(completeAudio); //
+                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(completeAudio): Int16Array.from(completeAudio)); //
                 this.queue.put(null); // Signal end of clip
             }
         }
     }
 
-    public async attach(frame: FrameMsg): Promise<AsyncQueue<Uint8Array | null>> { //
-        this.queue = new AsyncQueue<Uint8Array | null>(); //
+    public async attach(frame: FrameMsg): Promise<AsyncQueue<Int8Array | Int16Array | null>> {
+        this.queue = new AsyncQueue<Int8Array | Int16Array | null>();
         this._audioBuffer = []; // Reset audio buffer
 
         // Subscribe to the data response feed
@@ -109,7 +131,7 @@ export class RxAudio {
     public static toWavBytes(
         pcmData: Uint8Array,
         sampleRate: number = 8000,
-        bitsPerSample: number = 16,
+        bitsPerSample: number = 8,
         channels: number = 1
     ): Uint8Array { //
         const byteRate = sampleRate * channels * (bitsPerSample / 8); //

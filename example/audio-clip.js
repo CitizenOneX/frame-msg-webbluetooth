@@ -1,5 +1,5 @@
-import { FrameMsg, StdLua, RxAudio, TxCode } from 'frame-msg';
-import frameApp from './lua/audio_frame_app.lua?raw';
+import { FrameMsg, StdLua, RxAudio, TxCode, RxAudioSampleRate, RxAudioBitDepth } from 'frame-msg';
+import frameApp from './lua/audio_clip_frame_app.lua?raw';
 
 // Record an audio clip using Frame's microphone and play it back
 // This example uses the RxAudio class to receive audio data from Frame
@@ -35,8 +35,12 @@ export async function run() {
     // "require" the main frame_app lua file to run it
     await frame.startFrameApp();
 
-    // hook up the RxAudio receiver
-    const rxAudio = new RxAudio({ streaming: false }); // Explicitly non-streaming
+    // hook up the RxAudio receiver as non-streaming so all the data comes in one clip
+    // sample rate and bit depth should match the microphone.start call in the Lua app
+    // see ./lua/audio_clip_frame_app.lua for the parameters
+    const sampleRate = RxAudioSampleRate.SAMPLE_RATE_8KHZ;
+    const bitDepth = RxAudioBitDepth.BIT_DEPTH_8;
+    const rxAudio = new RxAudio({ streaming: false, sampleRate: sampleRate, bitDepth: bitDepth });
     const audioQueue = await rxAudio.attach(frame);
 
     // Tell Frame to start streaming audio
@@ -59,19 +63,27 @@ export async function run() {
       console.log("Raw PCM audio data received, length:", pcmData.length);
 
       // Convert the raw PCM data to WAV format
-      // Assuming default audio parameters (8000 Hz, 16-bit, 1 channel)
+      // Default audio parameters are 8000 Hz, signed 8-bit, 1 channel.
       // If your Frame device uses different parameters, specify them here.
-      // e.g., RxAudio.toWavBytes(pcmData, 16000, 16, 1) for 16kHz sample rate.
-      const wavBytes = RxAudio.toWavBytes(pcmData);
+      // e.g., RxAudio.toWavBytes(pcmData, 16000, 16, 1) for 16kHz sample rate, signed 16-bit.
+      const wavBytes = RxAudio.toWavBytes(new Uint8Array(pcmData.buffer), sampleRate, bitDepth, 1);
       console.log("WAV data created, length:", wavBytes.length);
 
       // Play the audio clip using the Web Audio API
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: sampleRate // Set the sample rate for the AudioContext
+      });
+
       // decodeAudioData expects an ArrayBuffer
       const audioBuffer = await audioContext.decodeAudioData(wavBytes.buffer);
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
+      // Clean up when playback ends
+      source.onended = () => {
+        source.disconnect();
+        audioContext.close();
+      };
       source.start(0);
       console.log("Playing audio clip...");
 

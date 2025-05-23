@@ -51,7 +51,7 @@ export class RxAudio {
         this.bitDepth = options.bitDepth ?? RxAudioBitDepth.BIT_DEPTH_8; // Default to 8 bits
 
         this.queue = null;
-        this._audioBuffer = []; //
+        this._audioBuffer = [];
     }
 
     private concatenateAudioData(): Uint8Array {
@@ -79,7 +79,7 @@ export class RxAudio {
 
         if (this.streaming) { //
             if (chunk.length > 0) {
-                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(chunk) : Int16Array.from(chunk));
+                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(chunk) : new Int16Array(chunk.buffer));
             }
             if (flag === this.finalChunkFlag) {
                 this.queue.put(null); // Signal end of stream
@@ -92,7 +92,7 @@ export class RxAudio {
                 const completeAudio = this.concatenateAudioData();
                 this._audioBuffer = []; // Reset buffer
 
-                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(completeAudio): Int16Array.from(completeAudio)); //
+                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(completeAudio): new Int16Array(completeAudio.buffer)); //
                 this.queue.put(null); // Signal end of clip
             }
         }
@@ -163,8 +163,23 @@ export class RxAudio {
         RxAudio.writeString(view, offset, 'data'); offset += 4; //
         view.setUint32(offset, dataSize, true); offset += 4; //
 
-        // Write PCM data
-        new Uint8Array(wavBuffer, offset).set(pcmData);
+        // Write PCM data.
+        // For 8-bit WAV, data is unsigned (0-255, 128 is silence).
+        // If input pcmData (for bitsPerSample=8) represents signed 8-bit samples (-128 to 127),
+        // it needs to be converted to unsigned by adding 128.
+        if (bitsPerSample === 8) {
+            const targetDataView = new Uint8Array(wavBuffer, offset, dataSize);
+            for (let i = 0; i < dataSize; i++) {
+                // Assuming pcmData[i] is a byte representing a signed 8-bit sample.
+                // Convert to signed value, then shift to unsigned range for WAV.
+                const signedSample = pcmData[i] < 128 ? pcmData[i] : pcmData[i] - 256;
+                targetDataView[i] = signedSample + 128;
+            }
+        } else {
+            // For 16-bit (and others), assume pcmData is already in the correct byte format
+            // (e.g., signed little-endian for 16-bit PCM).
+            new Uint8Array(wavBuffer, offset).set(pcmData);
+        }
 
         return new Uint8Array(wavBuffer);
     }

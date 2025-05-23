@@ -69,7 +69,6 @@ export async function run() {
     // These should match the microphone.start call in the Lua app './lua/audio_frame_app.lua'
     const sampleRate = RxAudioSampleRate.SAMPLE_RATE_8KHZ;
     const bitDepth = RxAudioBitDepth.BIT_DEPTH_8;
-    console.log("Sample rate:", sampleRate);
 
     try {
         console.log("Connecting to Frame...");

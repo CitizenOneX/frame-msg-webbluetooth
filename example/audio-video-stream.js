@@ -1,28 +1,5 @@
-import { FrameMsg, StdLua, TxCode, TxCaptureSettings, RxAudio, RxPhoto } from 'frame-msg';
+import { FrameMsg, StdLua, TxCode, TxCaptureSettings, RxAudio, RxPhoto, RxAudioSampleRate } from 'frame-msg';
 import frameApp from './lua/audio_video_frame_app.lua?raw';
-
-// --- Helper function to convert signed 8-bit PCM to Float32Array ---
-function pcm8BitToFloat32(uint8Array) {
-    const numSamples = uint8Array.length;
-    const float32Array = new Float32Array(numSamples);
-
-    // reinterpret the raw Uint8Array as a signed byte array
-    const int8Array = new Int8Array(uint8Array.buffer, uint8Array.byteOffset, numSamples);
-
-    // Convert each sample to a float in the range [-1.0, 1.0]
-    for (let i = 0; i < numSamples; i++) {
-        // in normal usage, the mic only uses about half of the dynamic range
-        // so to scale the 8-bit signed value to a float in the range [-1.0, 1.0]
-        // we divide by 64 instead of 128, then clamp to [-1.0, 1.0]
-        float32Array[i] = int8Array[i] / 64.0;
-        if (float32Array[i] < -1.0) {
-            float32Array[i] = -1.0;
-        } else if (float32Array[i] > 1.0) {
-            float32Array[i] = 1.0;
-        }
-    }
-    return float32Array;
-}
 
 // --- AudioWorkletProcessor code as a string ---
 const pcmPlayerProcessorCode = `
@@ -32,7 +9,7 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
         this._buffer = [];
         this._totalSamplesQueued = 0;
         // 'sampleRate' is a global in AudioWorkletGlobalScope
-        this._maxBufferedSamples = (options.processorOptions.sampleRate || sampleRate || 8000) * 5;
+        this._maxBufferedSamples = (sampleRate || 8000) * 5;
 
         this.port.onmessage = (event) => {
             if (event.data === null) {
@@ -113,7 +90,7 @@ async function runAudioProcessing(frame, audioQueue, pcmPlayerNode, getKeepRunni
             }
 
             if (audioSamples.length > 0 && pcmPlayerNode && pcmPlayerNode.port) {
-                const float32Chunk = pcm8BitToFloat32(audioSamples);
+                const float32Chunk = RxAudio.pcm8BitToFloat32(audioSamples);
                 pcmPlayerNode.port.postMessage(float32Chunk);
             }
         }
@@ -235,10 +212,11 @@ export async function run() {
     let rxAudio;
     let rxPhoto;
     let keepRunning = true;
-    const photoIntervalMs = 5000; // 5 seconds
+    const photoIntervalMs = 5000; // Request a photo every 5 seconds
     const getKeepRunning = () => keepRunning;
 
-    const SAMPLE_RATE = 8000;
+    const SAMPLE_RATE = RxAudioSampleRate.SAMPLE_RATE_8KHZ; // Sample rate for audio processing
+    const BIT_DEPTH = 8; // Bit depth for audio processing
 
     try {
         console.log("Connecting to Frame...");
@@ -267,7 +245,7 @@ export async function run() {
         });
         pcmPlayerNode.connect(audioContext.destination);
 
-        rxAudio = new RxAudio({ streaming: true });
+        rxAudio = new RxAudio({ streaming: true, sampleRate: SAMPLE_RATE, bitDepth: BIT_DEPTH });
         audioQueue = await rxAudio.attach(frame);
 
         rxPhoto = new RxPhoto({ upright: true });
@@ -343,7 +321,7 @@ export async function run() {
 
         if (rxAudio && frame && frame.isConnected()) { // Check frame & isConnected before detach
             try {
-                await rxAudio.detach(frame);
+                rxAudio.detach(frame);
                 console.log("RxAudio detached.");
             } catch (e) {
                 console.error("Error detaching RxAudio:", e);
@@ -354,7 +332,7 @@ export async function run() {
 
         if (rxPhoto && frame && frame.isConnected()) { // Check frame & isConnected
             try {
-                await rxPhoto.detach(frame);
+                rxPhoto.detach(frame);
                 console.log("RxPhoto detached.");
             } catch (e) {
                 console.error("Error detaching RxPhoto:", e);

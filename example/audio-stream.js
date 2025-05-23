@@ -1,51 +1,6 @@
 import { FrameMsg, StdLua, TxCode, RxAudio, RxAudioSampleRate, RxAudioBitDepth } from 'frame-msg';
 import frameApp from './lua/audio_frame_app.lua?raw';
 
-// --- Helper function to convert signed 8-bit PCM (provided as a raw uint8 array) to Float32Array ---
-function pcm8BitToFloat32(uint8Array) {
-    const numSamples = uint8Array.length;
-    const float32Array = new Float32Array(numSamples);
-
-    // reinterpret the raw Uint8Array as a signed byte array
-    const int8Array = new Int8Array(uint8Array.buffer, uint8Array.byteOffset, numSamples);
-
-    // Convert each sample to a float in the range [-1.0, 1.0]
-    for (let i = 0; i < numSamples; i++) {
-        // in normal usage, the mic only uses about half of the dynamic range
-        // so to scale the 8-bit signed value to a float in the range [-1.0, 1.0]
-        // we divide by 64 instead of 128, then clamp to [-1.0, 1.0]
-        float32Array[i] = int8Array[i] / 64.0;
-        if (float32Array[i] < -1.0) {
-            float32Array[i] = -1.0;
-        } else if (float32Array[i] > 1.0) {
-            float32Array[i] = 1.0;
-        }
-    }
-    return float32Array;
-}
-
-// --- Helper function to convert signed 16-bit PCM (provided as a raw uint8 array) to Float32Array ---
-function pcm16BitToFloat32(uint8Array) {
-    const numSamples = uint8Array.length / 2;
-    const float32Array = new Float32Array(numSamples);
-    const dataView = new DataView(uint8Array.buffer, uint8Array.byteOffset, uint8Array.byteLength);
-
-    for (let i = 0; i < numSamples; i++) {
-        const int16Value = dataView.getInt16(i * 2);
-        // in normal usage, the mic only uses about half of the dynamic range
-        // so to scale the 16-bit signed value to a float in the range [-1.0, 1.0]
-        // we divide by 16384 instead of 32768, then clamp to [-1.0, 1.0]
-        let floatValue = int16Value / 16384.0; // Scale to [-1.0, 1.0]
-        if (floatValue < -1.0) {
-            floatValue = -1.0;
-        } else if (floatValue > 1.0) {
-            floatValue = 1.0;
-        }
-        float32Array[i] = floatValue;
-    }
-    return float32Array;
-}
-
 // Define the AudioWorkletProcessor code as a string
 const pcmPlayerProcessorCode = `
 class PCMPlayerProcessor extends AudioWorkletProcessor {
@@ -173,10 +128,10 @@ export async function run() {
 
                 if (chunk.length > 0 && pcmPlayerNode && keepStreaming) {
                     if (chunk instanceof Int8Array) {
-                        const float32Chunk = pcm8BitToFloat32(chunk);
+                        const float32Chunk = RxAudio.pcm8BitToFloat32(chunk);
                         pcmPlayerNode.port.postMessage(float32Chunk);
                     } else if (chunk instanceof Int16Array) {
-                        const float32Chunk = pcm16BitToFloat32(chunk);
+                        const float32Chunk = RxAudio.pcm16BitToFloat32(chunk);
                         pcmPlayerNode.port.postMessage(float32Chunk);
                     }
                 }

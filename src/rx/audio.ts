@@ -168,4 +168,49 @@ export class RxAudio {
 
         return new Uint8Array(wavBuffer);
     }
+
+    // --- Helper function to convert signed 8-bit PCM (provided as a raw uint8 array) to Float32Array scaled to [-1.0, 1.0] ---
+    public static pcm8BitToFloat32(pcmData: Uint8Array) {
+        const numSamples = pcmData.length;
+        const float32Array = new Float32Array(numSamples);
+
+        // reinterpret the raw Uint8Array as a signed byte array
+        const int8Array = new Int8Array(pcmData.buffer, pcmData.byteOffset, numSamples);
+
+        // Convert each sample to a float in the range [-1.0, 1.0]
+        for (let i = 0; i < numSamples; i++) {
+            // in normal usage, the mic only uses about half of the dynamic range
+            // so to scale the 8-bit signed value to a float in the range [-1.0, 1.0]
+            // we divide by 64 instead of 128, then clamp to [-1.0, 1.0]
+            float32Array[i] = int8Array[i] / 64.0;
+            if (float32Array[i] < -1.0) {
+                float32Array[i] = -1.0;
+            } else if (float32Array[i] > 1.0) {
+                float32Array[i] = 1.0;
+            }
+        }
+        return float32Array;
+    }
+
+    // --- Helper function to convert signed 16-bit PCM (provided as a raw uint8 array) to Float32Array scaled to [-1.0, 1.0] ---
+    public static pcm16BitToFloat32(pcmData: Uint8Array) {
+        const numSamples = pcmData.length / 2;
+        const float32Array = new Float32Array(numSamples);
+        const dataView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
+
+        for (let i = 0; i < numSamples; i++) {
+            const int16Value = dataView.getInt16(i * 2);
+            // in normal usage, the mic only uses about half of the dynamic range
+            // so to scale the 16-bit signed value to a float in the range [-1.0, 1.0]
+            // we divide by 16384 instead of 32768, then clamp to [-1.0, 1.0]
+            let floatValue = int16Value / 16384.0; // Scale to [-1.0, 1.0]
+            if (floatValue < -1.0) {
+                floatValue = -1.0;
+            } else if (floatValue > 1.0) {
+                floatValue = 1.0;
+            }
+            float32Array[i] = floatValue;
+        }
+        return float32Array;
+    }
 }

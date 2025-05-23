@@ -5,6 +5,7 @@ export { TxPlainText } from './tx/plain-text';
 export { TxCaptureSettings } from './tx/capture-settings';
 export { TxCode } from './tx/code';
 export { TxImageSpriteBlock } from './tx/image-sprite-block';
+export { TxManualExpSettings } from './tx/manual-exp-settings';
 export { TxSprite } from './tx/sprite';
 export { TxSpriteCoords } from './tx/sprite-coords';
 

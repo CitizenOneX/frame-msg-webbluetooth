@@ -9,6 +9,8 @@ export { TxManualExpSettings } from './tx/manual-exp-settings';
 export { TxAutoExpSettings } from './tx/auto-exp-settings';
 export { TxSprite } from './tx/sprite';
 export { TxSpriteCoords } from './tx/sprite-coords';
+export { TxTextSpriteBlock } from './tx/text-sprite-block';
+export type { TxTextSpriteBlockOptions } from './tx/text-sprite-block';
 
 export { RxAudio, RxAudioBitDepth, RxAudioSampleRate } from './rx/audio';
 export type { RxAudioOptions } from './rx/audio';

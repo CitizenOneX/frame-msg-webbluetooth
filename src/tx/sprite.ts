@@ -1,5 +1,6 @@
-import { Image, Stack } from 'image-js';
+import { Image } from 'image-js';
 import lz4 from 'lz4js';
+import  * as IQ  from 'image-q';
 
 /**
  * Represents RGB color values.
@@ -176,77 +177,41 @@ export class TxSprite {
                 interpolation: 'nearestNeighbor' // PIL's NEAREST
             });
         }
+        // log width and height after resizing
+        console.log(`Resized image to ${image.width}x${image.height}`);
 
-        // Quantization to 16 colors: This is the challenging part with image-js directly.
-        // image-js doesn't have a direct MedianCut to N colors.
-        // Approach:
-        // 1. Try to reduce colors using bit depth if applicable, though this is more for channel reduction.
-        //    e.g., `image = image.convertColor('GREY').convertBitDepth(4);` for 16 shades of grey. Not what we want here.
-        // 2. For color images, a more robust solution would be to use a dedicated quantization library
-        //    with the pixel data obtained from image-js: `image.getPixelsArray()`.
-        //
-        // Simplified approach for now (similar to the Jimp attempt):
-        // Extract unique colors, and if too many, this approach will be suboptimal.
-        // A proper quantizer (e.g. from an external library) should be used here for quality.
-        // For demonstration, we'll use the getUniqueColorsFromImage, which will take the first 16
-        // unique colors or map to nearest if more are found after resizing.
-        // This isn't true quantization but a color sampling.
+       // Quantize the image to a maximum of 16 colors using image-q
+        const inPointContainer = IQ.utils.PointContainer.fromUint8Array(image.getRGBAData(), image.width, image.height);
+        console.log(`PointContainer created with ${inPointContainer.getPointArray().length} points.`);
 
-        // To attempt some color reduction before sampling (optional, may not be PIL's median cut quality):
-        // image = image.convertBitDepth(8); // Ensure it's 8-bit per channel if it was higher
+        // Build a palette with a maximum of 15 colors (save 0 for transparent/void/black color)
+        const palette = IQ.buildPaletteSync([inPointContainer], {colors: 15});
+        console.log(`Palette built: ${palette.getPointContainer().getPointArray().length} colors.`);
+        // insert the void color (0,0,0) at the start of the palette
+        palette.getPointContainer().getPointArray().unshift(IQ.utils.Point.createByQuadruplet([0, 0, 0, 0]));
 
-        let colorScan = TxSprite.getUniqueColorsFromImage(image, 16);
-        let finalPaletteRgb = [...colorScan.palette];
-        let finalPixelData = colorScan.indexedPixelData;
+        const outPointContainer = IQ.applyPaletteSync(inPointContainer, palette);
+        console.log(`OutPointContainer: ${outPointContainer.getPointArray().length} points.`);
 
-        while (finalPaletteRgb.length < 16 && finalPaletteRgb.length > 0) {
-            finalPaletteRgb.push({ r: 0, g: 0, b: 0 });
-        }
-        if (finalPaletteRgb.length === 0 && image.width > 0 && image.height > 0) {
-            for (let i = 0; i < 16; ++i) finalPaletteRgb.push({ r: 0, g: 0, b: 0 });
-        }
+        const indexedPixels = new Uint8Array(outPointContainer.toUint32Array());
+        console.log(`Indexed pixel data size: ${indexedPixels.length}.`);
 
-        if (finalPaletteRgb.length === 16) {
-            const tempColor = finalPaletteRgb[0];
-            finalPaletteRgb[0] = finalPaletteRgb[15];
-            finalPaletteRgb[15] = tempColor;
-
-            for (let i = 0; i < finalPixelData.length; i++) {
-                if (finalPixelData[i] === 0) {
-                    finalPixelData[i] = 255; // Temp
-                } else if (finalPixelData[i] === 15) {
-                    finalPixelData[i] = 0;
-                }
-            }
-            for (let i = 0; i < finalPixelData.length; i++) {
-                if (finalPixelData[i] === 255) {
-                    finalPixelData[i] = 15;
-                }
-            }
-            finalPaletteRgb[0] = { r: 0, g: 0, b: 0 };
-        }
-
-        const numSpriteColors = finalPaletteRgb.length;
-        const paletteDataBytes = new Uint8Array(numSpriteColors * 3);
-        for (let i = 0; i < numSpriteColors; i++) {
-            paletteDataBytes[i * 3 + 0] = finalPaletteRgb[i].r;
-            paletteDataBytes[i * 3 + 1] = finalPaletteRgb[i].g;
-            paletteDataBytes[i * 3 + 2] = finalPaletteRgb[i].b;
-        }
-
-        const expectedPixelDataLength = image.width * image.height;
-        if (finalPixelData.length !== expectedPixelDataLength) {
-            console.warn(`Pixel data length mismatch. Expected ${expectedPixelDataLength}, got ${finalPixelData.length}. Reinitializing pixel data.`);
-            finalPixelData = new Uint8Array(expectedPixelDataLength).fill(0);
-        }
-
+        // Convert image-q palette to our flat Uint8Array RGB format
+        const actualNumColors = palette.getPointContainer().getPointArray().length;
+        const paletteData = new Uint8Array(actualNumColors * 3);
+        palette.getPointContainer().getPointArray().forEach((colorPoint, i) => {
+            paletteData[i * 3 + 0] = colorPoint.r;
+            paletteData[i * 3 + 1] = colorPoint.g;
+            paletteData[i * 3 + 2] = colorPoint.b;
+            console.log(`Color ${i}: R=${colorPoint.r}, G=${colorPoint.g}, B=${colorPoint.b}`);
+        });
 
         return new TxSprite(
             image.width,
             image.height,
-            numSpriteColors > 0 ? numSpriteColors : 16,
-            paletteDataBytes,
-            finalPixelData,
+            actualNumColors,
+            paletteData,
+            indexedPixels,
             compress
         );
     }

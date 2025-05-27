@@ -36,6 +36,7 @@
     "vite-plugin-dts": "^4.5.4"
   },
   "dependencies": {
+    "@pdf-lib/upng": "^1.0.1",
     "@types/lz4js": "^0.2.1",
     "frame-ble": "^0.1.0",
     "image-js": "^0.37.0",

@@ -37,20 +37,23 @@ export async function run() {
     // It signals that it is ready by sending something on the string response channel.
     await frame.startFrameApp();
 
-    // send the 1-bit image to Frame in chunks
+    // send the 1-bit image to Frame
     // Note that the frameside app is expecting a message of type TxSprite on msgCode 0x20
     let response = await fetch(new URL('./images/logo_1bit.png', import.meta.url));
     let imageBytes = new Uint8Array(await response.arrayBuffer());
     let sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // send the 2-bit image to Frame in chunks
+    // send the 2-bit image to Frame
     response = await fetch(new URL('./images/street_2bit.png', import.meta.url));
     imageBytes = new Uint8Array(await response.arrayBuffer());
     sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // send the 4-bit image to Frame in chunks
+    // sleep for 5 more seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    // send the 4-bit image to Frame
     response = await fetch(new URL('./images/hotdog_4bit.png', import.meta.url));
     imageBytes = new Uint8Array(await response.arrayBuffer());
     sprite = await TxSprite.fromIndexedPngBytes(imageBytes);

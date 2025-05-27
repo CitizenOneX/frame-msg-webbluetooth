@@ -1,6 +1,7 @@
 import { Image } from 'image-js';
 import lz4 from 'lz4js';
 import  * as IQ  from 'image-q';
+import UPNG from '@pdf-lib/upng';
 
 /**
  * Represents RGB color values.
@@ -47,112 +48,36 @@ export class TxSprite {
         }
     }
 
-    // Helper to convert image-js pixel [R,G,B?,A?] to our RGBColor and a unique key
-    private static getPixelInfo(image: Image, x: number, y: number): { color: RGBColor, key: number } {
-        const pixel = image.getPixelXY(x, y); // Returns [R, G, B, A?]
-        const r = pixel[0];
-        const g = pixel[1];
-        const b = pixel[2];
-        // const a = pixel.length > 3 ? pixel[3] : 255; // Alpha not used for palette key here
-        const key = (r << 16) | (g << 8) | b;
-        return { color: { r, g, b }, key };
-    }
-
-    // This method needs substantial changes for image-js
-    private static getUniqueColorsFromImage(
-        image: Image,
-        maxColors: number
-    ): { palette: RGBColor[], indexedPixelData: Uint8Array } {
-        const uniqueColorMap = new Map<number, number>(); // colorKey to palette index
-        const palette: RGBColor[] = [];
-        const indexedPixelData = new Uint8Array(image.width * image.height);
-        let pixelDataIndex = 0;
-
-        for (let y = 0; y < image.height; y++) {
-            for (let x = 0; x < image.width; x++) {
-                const { color, key } = TxSprite.getPixelInfo(image, x, y);
-                let paletteIdx = uniqueColorMap.get(key);
-
-                if (paletteIdx === undefined) {
-                    if (palette.length < maxColors) {
-                        paletteIdx = palette.length;
-                        palette.push(color);
-                        uniqueColorMap.set(key, paletteIdx);
-                    } else {
-                        // Simplification: If palette is full, find the closest color in the current palette
-                        // This is a basic nearest neighbor, not ideal but a starting point.
-                        let minDist = Infinity;
-                        let closestIdx = 0;
-                        for (let i = 0; i < palette.length; i++) {
-                            const palColor = palette[i];
-                            const dist =
-                                Math.abs(palColor.r - color.r) +
-                                Math.abs(palColor.g - color.g) +
-                                Math.abs(palColor.b - color.b); // Manhattan distance
-                            if (dist < minDist) {
-                                minDist = dist;
-                                closestIdx = i;
-                            }
-                        }
-                        paletteIdx = closestIdx;
-                    }
-                }
-                indexedPixelData[pixelDataIndex++] = paletteIdx;
-            }
-        }
-        return { palette, indexedPixelData };
-    }
-
-
+    /**
+     * Creates a TxSprite from an indexed PNG image.
+     * @param imageBytes The ArrayBuffer containing the PNG image data.
+     * @param compress Whether to compress the pixel data using LZ4.
+     * @returns A TxSprite instance.
+     */
     static async fromIndexedPngBytes(imageBytes: ArrayBuffer, compress: boolean = false): Promise<TxSprite> {
-        const image = await Image.load(imageBytes);
+        const png = UPNG.decode(imageBytes);
 
-        // For image-js, an "indexed PNG" will load, and we can inspect its properties.
-        // If it has a palette, image.palette will be set. image.meta.palette is also mentioned.
-        // However, image-js often converts to an internal RGBA format upon load.
-        // So, we'll count unique colors as a proxy, similar to the Jimp approach.
-
-        let colorScan = TxSprite.getUniqueColorsFromImage(image, 16);
-
-        if (colorScan.palette.length > 16) {
-            throw new Error("PNG must be effectively indexed with a palette of 16 colors or fewer.");
-        }
-
-        let currentImage = image;
-        if (currentImage.width > 640 || currentImage.height > 400) {
-            currentImage = currentImage.resize({
-                width: 640,
-                height: 400,
-                preserveAspectRatio: true,
-                interpolation: 'nearestNeighbor' // PIL's NEAREST
-            });
-            // Re-scan colors if resized
-            colorScan = TxSprite.getUniqueColorsFromImage(currentImage, 16);
-            if (colorScan.palette.length > 16) { // Should be unlikely with nearestNeighbor
-                throw new Error("Resized PNG has too many colors.");
-            }
-        }
-
-        const numColors = colorScan.palette.length;
-        const paletteData = new Uint8Array(numColors * 3);
-        for (let i = 0; i < numColors; i++) {
-            paletteData[i * 3 + 0] = colorScan.palette[i].r;
-            paletteData[i * 3 + 1] = colorScan.palette[i].g;
-            paletteData[i * 3 + 2] = colorScan.palette[i].b;
-        }
-
-        const pixelData = colorScan.indexedPixelData;
+        // no resize or color quantization here, just use the PNG as is
+        const { width, height, data, ctype, tabs } = png;
+        console.log(`PNG dimensions: ${width}x${height}, data length: ${data.byteLength}, ctype: ${ctype}, PLTE: ${tabs.PLTE}`);
 
         return new TxSprite(
-            currentImage.width,
-            currentImage.height,
-            numColors,
-            paletteData,
-            pixelData,
+            width,
+            height,
+            tabs.PLTE ? tabs.PLTE.length / 3 : 0, // Number of colors in the palette
+            tabs.PLTE ? new Uint8Array(tabs.PLTE) : new Uint8Array(), // Palette data
+            new Uint8Array(data.slice(0, width * height)), // Pixel data (palette indices)
             compress
         );
     }
 
+    /**
+     * Creates a TxSprite from an image file, resizing and quantizing it to a maximum of 16 colors.
+     * @param imageBytes The ArrayBuffer containing the image data.
+     * @param maxPixels The maximum number of pixels allowed in the sprite.
+     * @param compress Whether to compress the pixel data using LZ4.
+     * @returns A TxSprite instance.
+     */
     static async fromImageBytes(imageBytes: ArrayBuffer, maxPixels: number = 48000, compress: boolean = false): Promise<TxSprite> {
         let image = await Image.load(imageBytes);
 

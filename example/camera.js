@@ -43,8 +43,8 @@ export async function run() {
     const photoQueue = await rxPhoto.attach(frame);
 
     // give Frame some time for the autoexposure to settle
-    console.log("Waiting 5s for autoexposure to settle...");
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log("Waiting 2s for autoexposure to settle...");
+    await new Promise(resolve => setTimeout(resolve, 2000));
     console.log("Taking photo...");
 
     // Request the photo by sending a TxCaptureSettings message

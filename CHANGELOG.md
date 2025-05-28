@@ -1,3 +1,7 @@
+## 0.2.1
+
+* Republished with package lock updated
+
 ## 0.2.0
 
 * Improved support for sprites, audio

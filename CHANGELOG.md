@@ -1,3 +1,7 @@
+## 0.2.3
+
+* Rebuilt with frame-ble 0.2.2 dependency
+
 ## 0.2.2
 
 * Rebuilt with frame-ble 0.2.1 dependency

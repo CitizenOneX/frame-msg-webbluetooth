@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCode, RxIMU } from 'frame-msg';
-import frameApp from './lua/imu_frame_app.lua?raw';
+import frameApp from './lua/imu_stream_frame_app.lua?raw';
 
 // Stream IMU updates from Frame and print them to the console
 export async function run() {

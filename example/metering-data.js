@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCode, RxMeteringData } from 'frame-msg';
-import frameApp from './lua/metering_frame_app.lua?raw';
+import frameApp from './lua/metering_data_frame_app.lua?raw';
 
 // Request a sequence of light metering updates from Frame's camera and print them to the console
 export async function run() {

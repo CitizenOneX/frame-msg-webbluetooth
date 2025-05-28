@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
-import frameApp from './lua/camera_frame_app.lua?raw';
+import frameApp from './lua/live_camera_feed_frame_app.lua?raw';
 
 // Take a photo using the Frame camera and display it
 export async function run() {

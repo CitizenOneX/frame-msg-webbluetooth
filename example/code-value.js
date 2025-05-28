@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCode } from 'frame-msg';
-import frameApp from './lua/code_frame_app.lua?raw';
+import frameApp from './lua/code_value_frame_app.lua?raw';
 
 // Send a tiny TxCode message to Frame with a single-byte value as a control message
 export async function run() {

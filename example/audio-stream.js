@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCode, RxAudio, RxAudioSampleRate, RxAudioBitDepth } from 'frame-msg';
-import frameApp from './lua/audio_frame_app.lua?raw';
+import frameApp from './lua/audio_stream_frame_app.lua?raw';
 
 // Define the AudioWorkletProcessor code as a string
 const pcmPlayerProcessorCode = `

@@ -1,6 +1,6 @@
 # Examples of `frame-msg` npm package usage
 ## Background
-Frame is a pair of smart glasses that communicates via Bluetooth Low Energy to a host device, and runs Lua code on its VM. Lua code is sent to Frame in the application startup sequence.
+Frame is a pair of smart glasses that communicates via Bluetooth Low Energy with a host device, and runs Lua code on its VM. Lua code is sent to Frame in the application startup sequence.
 Each example contains a Javascript file and a corresponding Lua file that is copied to Frame on startup using uploadFrameApp() after the required standard Lua libs are uploaded.
 The host-side Javascript program and the device-side Lua program pass messages to each other identified by a single-byte message code, so these codes must match exactly for handlers to correctly process messages.
 Numerous examples follow that demonstrate many features of the Frame SDK and the corresponding host-side and device-side code.
@@ -235,7 +235,7 @@ app_loop()
 // JavaScript file: audio-stream.js
 ```javascript
 import { FrameMsg, StdLua, TxCode, RxAudio, RxAudioSampleRate, RxAudioBitDepth } from 'frame-msg';
-import frameApp from './lua/audio_frame_app.lua?raw';
+import frameApp from './lua/audio_stream_frame_app.lua?raw';
 
 // Define the AudioWorkletProcessor code as a string
 const pcmPlayerProcessorCode = `
@@ -445,12 +445,103 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/audio_stream_frame_app.lua
+// Corresponding Lua file: lua/audio_stream_frame_app.lua
+```lua
+local data = require('data.min')
+local code = require('code.min')
+local audio = require('audio.min')
+
+-- Phone to Frame flags
+AUDIO_SUBS_MSG = 0x30
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[AUDIO_SUBS_MSG] = code.parse_code
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	local streaming = false
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+					if (data.app_data[AUDIO_SUBS_MSG] ~= nil) then
+
+						if data.app_data[AUDIO_SUBS_MSG].value == 1 then
+							audio_data = ''
+							streaming = true
+							audio.start({sample_rate=8000, bit_depth=8})
+							frame.display.text("\u{F0010}", 300, 1)
+						else
+							-- 'stop' message
+							-- don't set streaming = false here, it will be set
+							-- when all the audio data is flushed
+							audio.stop()
+							frame.display.text(" ", 1, 1)
+						end
+
+						frame.display.show()
+						data.app_data[AUDIO_SUBS_MSG] = nil
+					end
+
+				end
+
+				-- send any pending audio data back
+				-- Streams until AUDIO_SUBS_MSG is sent from host with a value of 0
+				if streaming then
+					-- read_and_send_audio() sends one MTU worth of samples
+					-- so loop up to 10 times until we have caught up or the stream has stopped
+					local sent = audio.read_and_send_audio()
+					for i = 1, 10 do
+						if sent == nil or sent == 0 then
+							break
+						end
+						sent = audio.read_and_send_audio()
+					end
+					if sent == nil then
+						streaming = false
+					end
+
+					-- 8kHz/8 bit is 8000b/s, which is ~33 packets/second, or 1 every 30ms
+					frame.sleep(0.001)
+				else
+					-- not streaming, sleep for longer
+					frame.sleep(0.1)
+				end
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## audio video stream
 // JavaScript file: audio-video-stream.js
 ```javascript
 import { FrameMsg, StdLua, TxCode, TxCaptureSettings, RxAudio, RxPhoto, RxAudioSampleRate } from 'frame-msg';
-import frameApp from './lua/audio_video_frame_app.lua?raw';
+import frameApp from './lua/audio_video_stream_frame_app.lua?raw';
 
 // --- AudioWorkletProcessor code as a string ---
 const pcmPlayerProcessorCode = `
@@ -834,12 +925,135 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/audio_video_stream_frame_app.lua
+// Corresponding Lua file: lua/audio_video_stream_frame_app.lua
+```lua
+local data = require('data.min')
+local code = require('code.min')
+local audio = require('audio.min')
+local camera = require('camera.min')
+
+-- Phone to Frame flags
+AUDIO_SUBS_MSG = 0x30
+CAPTURE_SETTINGS_MSG = 0x0d
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[AUDIO_SUBS_MSG] = code.parse_code
+data.parsers[CAPTURE_SETTINGS_MSG] = camera.parse_capture_settings
+
+function clear_display()
+    frame.display.text(" ", 1, 1)
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+function show_flash()
+    frame.display.bitmap(241, 191, 160, 2, 0, string.rep("\xFF", 400))
+    frame.display.bitmap(311, 121, 20, 2, 0, string.rep("\xFF", 400))
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	local streaming = false
+	local last_auto_exp_time = 0
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+					if (data.app_data[AUDIO_SUBS_MSG] ~= nil) then
+
+						if data.app_data[AUDIO_SUBS_MSG].value == 1 then
+							audio_data = ''
+							streaming = true
+							audio.start({sample_rate=8000, bit_depth=8})
+							frame.display.text("\u{F0010}", 300, 1)
+						else
+							-- don't set streaming = false here, it will be set
+							-- when all the audio data is flushed
+							audio.stop()
+							frame.display.text(" ", 1, 1)
+						end
+
+						frame.display.show()
+						data.app_data[AUDIO_SUBS_MSG] = nil
+					end
+
+					if (data.app_data[CAPTURE_SETTINGS_MSG] ~= nil) then
+						-- visual indicator of capture and send
+						show_flash()
+						rc, err = pcall(camera.capture_and_send, data.app_data[CAPTURE_SETTINGS_MSG])
+						clear_display()
+
+						if rc == false then
+							print(err)
+						end
+
+						data.app_data[CAPTURE_SETTINGS_MSG] = nil
+					end
+
+				end
+
+				-- send any pending audio data back
+				-- Streams until AUDIO_SUBS_MSG is sent from host with a value of 0
+				if streaming then
+					sent = audio.read_and_send_audio()
+
+					if (sent == nil) then
+						streaming = false
+					end
+
+					-- 8kHz/8 bit is 8000b/s, which is 33 packets/second, or 1 every 30ms
+					frame.sleep(0.001)
+				else
+					-- not streaming, sleep for longer
+					frame.sleep(0.1)
+				end
+
+				-- run the autoexposure loop every 100ms
+				if camera.is_auto_exp then
+					local t = frame.time.utc()
+					if (t - last_auto_exp_time) > 0.1 then
+						camera.run_auto_exposure()
+						last_auto_exp_time = t
+					end
+				end
+
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## auto exposure
 // JavaScript file: auto-exposure.js
 ```javascript
 import { FrameMsg, StdLua, TxCaptureSettings, TxAutoExpSettings, RxPhoto, RxAutoExpResult, TxCode } from 'frame-msg';
-import frameApp from './lua/autoexp_frame_app.lua?raw';
+import frameApp from './lua/auto_exposure_frame_app.lua?raw';
 
 // Take a sequence of photos using the Frame camera with custom auto exposure settings and display it
 export async function run() {
@@ -947,7 +1161,108 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/auto_exposure_frame_app.lua
+// Corresponding Lua file: lua/auto_exposure_frame_app.lua
+```lua
+local data = require('data.min')
+local camera = require('camera.min')
+local code = require('code.min')
+
+-- Phone to Frame flags
+CAPTURE_SETTINGS_MSG = 0x0d
+AUTOEXP_SETTINGS_MSG = 0x0e
+AUTOEXP_STEP_MSG = 0x0f
+
+-- register the message parser so it's automatically called when matching data comes in
+data.parsers[CAPTURE_SETTINGS_MSG] = camera.parse_capture_settings
+data.parsers[AUTOEXP_SETTINGS_MSG] = camera.parse_auto_exp_settings
+data.parsers[AUTOEXP_STEP_MSG] = code.parse_code
+
+function clear_display()
+    frame.display.text(" ", 1, 1)
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+function show_flash()
+    frame.display.bitmap(241, 191, 160, 2, 0, string.rep("\xFF", 400))
+    frame.display.bitmap(311, 121, 20, 2, 0, string.rep("\xFF", 400))
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+-- Main app loop
+function app_loop()
+	clear_display()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready (parse into take_photo, then clear data.app_data_block)
+				local items_ready = data.process_raw_items()
+
+				if items_ready > 0 then
+
+					if (data.app_data[CAPTURE_SETTINGS_MSG] ~= nil) then
+						-- visual indicator of capture and send
+						show_flash()
+						rc, err = pcall(camera.capture_and_send, data.app_data[CAPTURE_SETTINGS_MSG])
+						clear_display()
+
+						if rc == false then
+							print(err)
+						end
+
+						data.app_data[CAPTURE_SETTINGS_MSG] = nil
+					end
+
+					if (data.app_data[AUTOEXP_SETTINGS_MSG] ~= nil) then
+						camera.set_auto_exp_settings(data.app_data[AUTOEXP_SETTINGS_MSG])
+						data.app_data[AUTOEXP_SETTINGS_MSG] = nil
+					end
+
+					if (data.app_data[AUTOEXP_STEP_MSG] ~= nil) then
+						-- run one step of the autoexposure algorithm
+						autoexp_result = camera.run_auto_exposure()
+						-- also send back the table of values
+						camera.send_autoexp_result(autoexp_result)
+
+						-- TODO hack: reset r/g/b gains to low levels
+						-- in their original proportions: 1.9:1:2.2 (*64)
+						-- frame.camera.write_register(0x5180, 0x00)
+						-- frame.camera.write_register(0x5181, 0x79)
+						-- frame.camera.write_register(0x5182, 0x00)
+						-- frame.camera.write_register(0x5183, 0x40)
+						-- frame.camera.write_register(0x5184, 0x00)
+						-- frame.camera.write_register(0x5185, 0x8C)
+
+						data.app_data[AUTOEXP_STEP_MSG] = nil
+					end
+
+				end
+
+				frame.sleep(0.1)
+			end
+		)
+		-- Catch the break signal here and clean up the display
+		if rc == false then
+			-- send the error back on the stdout stream
+			print(err)
+			frame.display.text(" ", 1, 1)
+			frame.display.show()
+			frame.sleep(0.04)
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## camera
 // JavaScript file: camera.js
 ```javascript
@@ -1120,7 +1435,7 @@ app_loop()
 // JavaScript file: camera-sprite.js
 ```javascript
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto, TxSprite, TxImageSpriteBlock } from 'frame-msg';
-import frameApp from './lua/camera_image_sprite_block_frame_app.lua?raw';
+import frameApp from './lua/camera_sprite_frame_app.lua?raw';
 
 // Take a photo using the Frame camera, send it to the host, and send it back as a sprite (TxImageSpriteBlock) to the Frame display
 export async function run() {
@@ -1222,12 +1537,117 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/camera_sprite_frame_app.lua
+// Corresponding Lua file: lua/camera_sprite_frame_app.lua
+```lua
+local data = require('data.min')
+local camera = require('camera.min')
+local image_sprite_block = require('image_sprite_block.min')
+
+-- Phone to Frame flags
+CAPTURE_SETTINGS_MSG = 0x0d
+IMAGE_SPRITE_BLOCK = 0x20
+
+-- register the message parser so it's automatically called when matching data comes in
+data.parsers[CAPTURE_SETTINGS_MSG] = camera.parse_capture_settings
+data.parsers[IMAGE_SPRITE_BLOCK] = image_sprite_block.parse_image_sprite_block
+
+function clear_display()
+    frame.display.text(" ", 1, 1)
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+function show_flash()
+    frame.display.bitmap(241, 191, 160, 2, 0, string.rep("\xFF", 400))
+    frame.display.bitmap(311, 121, 20, 2, 0, string.rep("\xFF", 400))
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+-- Main app loop
+function app_loop()
+	clear_display()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready (parse into take_photo, then clear data.app_data_block)
+				local items_ready = data.process_raw_items()
+
+				if items_ready > 0 then
+
+					if (data.app_data[CAPTURE_SETTINGS_MSG] ~= nil) then
+						show_flash()
+						rc, err = pcall(camera.capture_and_send, data.app_data[CAPTURE_SETTINGS_MSG])
+						clear_display()
+
+						if rc == false then
+							print(err)
+						end
+
+						data.app_data[CAPTURE_SETTINGS_MSG] = nil
+					end
+
+					if (data.app_data[IMAGE_SPRITE_BLOCK] ~= nil) then
+						-- show the image sprite block
+						local isb = data.app_data[IMAGE_SPRITE_BLOCK]
+
+						-- it can be that we haven't got any sprites yet, so only proceed if we have a sprite
+						if isb.current_sprite_index > 0 then
+							-- either we have all the sprites, or we want to do progressive/incremental rendering
+							if isb.progressive_render or (isb.active_sprites == isb.total_sprites) then
+
+								for index = 1, isb.active_sprites do
+										local spr = isb.sprites[index]
+										local y_offset = isb.sprite_line_height * (index - 1)
+
+										-- set the palette the first time, all the sprites should have the same palette
+										if index == 1 then
+												image_sprite_block.set_palette(spr.num_colors, spr.palette_data)
+										end
+
+										frame.display.bitmap(1, y_offset + 1, spr.width, 2^spr.bpp, 0, spr.pixel_data)
+								end
+
+								frame.display.show()
+							end
+						end
+					end
+
+				end
+
+				if camera.is_auto_exp then
+					camera.run_auto_exposure()
+				end
+
+				frame.sleep(0.1)
+			end
+		)
+		-- Catch the break signal here and clean up the display
+		if rc == false then
+			-- send the error back on the stdout stream
+			print(err)
+			frame.display.text(" ", 1, 1)
+			frame.display.show()
+			frame.sleep(0.04)
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## code value
 // JavaScript file: code-value.js
 ```javascript
 import { FrameMsg, StdLua, TxCode } from 'frame-msg';
-import frameApp from './lua/code_frame_app.lua?raw';
+import frameApp from './lua/code_value_frame_app.lua?raw';
 
 // Send a tiny TxCode message to Frame with a single-byte value as a control message
 export async function run() {
@@ -1295,12 +1715,71 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/code_value_frame_app.lua
+// Corresponding Lua file: lua/code_value_frame_app.lua
+```lua
+local data = require('data.min')
+local code = require('code.min')
+
+-- Phone to Frame flags
+USER_CODE_FLAG = 0x42
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[USER_CODE_FLAG] = code.parse_code
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+					if data.app_data[USER_CODE_FLAG] ~= nil then
+						local code = data.app_data[USER_CODE_FLAG]
+						frame.display.text('Code received: ' .. tostring(code.value), 1, 1)
+						frame.display.show()
+
+						-- clear the object and run the garbage collector right away
+						data.app_data[USER_CODE_FLAG] = nil
+						collectgarbage('collect')
+					end
+
+				end
+
+				-- can't sleep for long, might be lots of incoming bluetooth data to process
+				frame.sleep(0.001)
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## imu stream
 // JavaScript file: imu-stream.js
 ```javascript
 import { FrameMsg, StdLua, TxCode, RxIMU } from 'frame-msg';
-import frameApp from './lua/imu_frame_app.lua?raw';
+import frameApp from './lua/imu_stream_frame_app.lua?raw';
 
 // Stream IMU updates from Frame and print them to the console
 export async function run() {
@@ -1400,12 +1879,89 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/imu_stream_frame_app.lua
+// Corresponding Lua file: lua/imu_stream_frame_app.lua
+```lua
+local data = require('data.min')
+local code = require('code.min')
+local imu = require('imu.min')
+
+-- Phone to Frame flags
+IMU_SUBS_MSG = 0x40
+
+-- Frame to Phone flags
+IMU_DATA_MSG = 0x0A
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[IMU_SUBS_MSG] = code.parse_code
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	local streaming = false
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+                    if (data.app_data[IMU_SUBS_MSG] ~= nil) then
+
+                        if data.app_data[IMU_SUBS_MSG].value == 1 then
+                            -- start subscription to IMU
+                            streaming = true
+							frame.display.text('Streaming IMU', 1, 1)
+							frame.display.show()
+                        else
+                            -- cancel subscription to IMU
+                            streaming = false
+							frame.display.text('Not streaming IMU', 1, 1)
+							frame.display.show()
+                        end
+
+                        data.app_data[IMU_SUBS_MSG] = nil
+                    end
+
+				end
+
+				-- poll and send the raw IMU data (3-axis magnetometer, 3-axis accelerometer)
+				-- Streams until STOP_IMU_MSG is sent from host
+				if streaming then
+					imu.send_imu_data(IMU_DATA_MSG)
+				end
+
+				frame.sleep(0.2)
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## live camera feed
 // JavaScript file: live-camera-feed.js
 ```javascript
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
-import frameApp from './lua/camera_frame_app.lua?raw';
+import frameApp from './lua/live_camera_feed_frame_app.lua?raw';
 
 // Take a photo using the Frame camera and display it
 export async function run() {
@@ -1495,12 +2051,89 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/live_camera_feed_frame_app.lua
+// Corresponding Lua file: lua/live_camera_feed_frame_app.lua
+```lua
+local data = require('data.min')
+local camera = require('camera.min')
+
+-- Phone to Frame flags
+CAPTURE_SETTINGS_MSG = 0x0d
+
+-- register the message parser so it's automatically called when matching data comes in
+data.parsers[CAPTURE_SETTINGS_MSG] = camera.parse_capture_settings
+
+function clear_display()
+    frame.display.text(" ", 1, 1)
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+function show_flash()
+    frame.display.bitmap(241, 191, 160, 2, 0, string.rep("\xFF", 400))
+    frame.display.bitmap(311, 121, 20, 2, 0, string.rep("\xFF", 400))
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+-- Main app loop
+function app_loop()
+	clear_display()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready (parse into take_photo, then clear data.app_data_block)
+				local items_ready = data.process_raw_items()
+
+				if items_ready > 0 then
+
+					if (data.app_data[CAPTURE_SETTINGS_MSG] ~= nil) then
+						-- visual indicator of capture and send
+						show_flash()
+						rc, err = pcall(camera.capture_and_send, data.app_data[CAPTURE_SETTINGS_MSG])
+						clear_display()
+
+						if rc == false then
+							print(err)
+						end
+
+						data.app_data[CAPTURE_SETTINGS_MSG] = nil
+					end
+
+				end
+
+				if camera.is_auto_exp then
+					camera.run_auto_exposure()
+				end
+
+				frame.sleep(0.1)
+			end
+		)
+		-- Catch the break signal here and clean up the display
+		if rc == false then
+			-- send the error back on the stdout stream
+			print(err)
+			frame.display.text(" ", 1, 1)
+			frame.display.show()
+			frame.sleep(0.04)
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## manual exposure
 // JavaScript file: manual-exposure.js
 ```javascript
 import { FrameMsg, StdLua, TxCaptureSettings, TxManualExpSettings, RxPhoto } from 'frame-msg';
-import frameApp from './lua/manualexp_frame_app.lua?raw';
+import frameApp from './lua/manual_exposure_frame_app.lua?raw';
 
 // Take a photo using the Frame camera with manual exposure settings and display it
 export async function run() {
@@ -1589,12 +2222,93 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/manual_exposure_frame_app.lua
+// Corresponding Lua file: lua/manual_exposure_frame_app.lua
+```lua
+local data = require('data.min')
+local camera = require('camera.min')
+local code = require('code.min')
+
+-- Phone to Frame flags
+CAPTURE_SETTINGS_MSG = 0x0d
+MANUALEXP_SETTINGS_MSG = 0x0c
+
+-- register the message parser so it's automatically called when matching data comes in
+data.parsers[CAPTURE_SETTINGS_MSG] = camera.parse_capture_settings
+data.parsers[MANUALEXP_SETTINGS_MSG] = camera.parse_manual_exp_settings
+
+function clear_display()
+    frame.display.text(" ", 1, 1)
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+function show_flash()
+    frame.display.bitmap(241, 191, 160, 2, 0, string.rep("\xFF", 400))
+    frame.display.bitmap(311, 121, 20, 2, 0, string.rep("\xFF", 400))
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+-- Main app loop
+function app_loop()
+	clear_display()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready (parse into take_photo, then clear data.app_data_block)
+				local items_ready = data.process_raw_items()
+
+				if items_ready > 0 then
+
+					if (data.app_data[CAPTURE_SETTINGS_MSG] ~= nil) then
+						-- visual indicator of capture and send
+						show_flash()
+						rc, err = pcall(camera.capture_and_send, data.app_data[CAPTURE_SETTINGS_MSG])
+						clear_display()
+
+						if rc == false then
+							print(err)
+						end
+
+						data.app_data[CAPTURE_SETTINGS_MSG] = nil
+					end
+
+					if (data.app_data[MANUALEXP_SETTINGS_MSG] ~= nil) then
+						camera.set_manual_exp_settings(data.app_data[MANUALEXP_SETTINGS_MSG])
+						data.app_data[MANUALEXP_SETTINGS_MSG] = nil
+					end
+
+				end
+
+				frame.sleep(0.1)
+			end
+		)
+		-- Catch the break signal here and clean up the display
+		if rc == false then
+			-- send the error back on the stdout stream
+			print(err)
+			frame.display.text(" ", 1, 1)
+			frame.display.show()
+			frame.sleep(0.04)
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## metering data
 // JavaScript file: metering-data.js
 ```javascript
 import { FrameMsg, StdLua, TxCode, RxMeteringData } from 'frame-msg';
-import frameApp from './lua/metering_frame_app.lua?raw';
+import frameApp from './lua/metering_data_frame_app.lua?raw';
 
 // Request a sequence of light metering updates from Frame's camera and print them to the console
 export async function run() {
@@ -1683,12 +2397,71 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/metering_data_frame_app.lua
+// Corresponding Lua file: lua/metering_data_frame_app.lua
+```lua
+local data = require('data.min')
+local camera = require('camera.min')
+local code = require('code.min')
+
+-- Phone to Frame flags
+METERING_QUERY_MSG = 0x12
+
+-- register the message parser so it's automatically called when matching data comes in
+data.parsers[METERING_QUERY_MSG] = code.parse_code
+
+function clear_display()
+    frame.display.text(" ", 1, 1)
+    frame.display.show()
+    frame.sleep(0.04)
+end
+
+-- Main app loop
+function app_loop()
+	clear_display()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready (parse into take_photo, then clear data.app_data_block)
+				local items_ready = data.process_raw_items()
+
+				if items_ready > 0 then
+
+					if (data.app_data[METERING_QUERY_MSG] ~= nil) then
+						camera.send_metering_data()
+						data.app_data[METERING_QUERY_MSG] = nil
+					end
+
+				end
+
+				frame.sleep(0.1)
+			end
+		)
+		-- Catch the break signal here and clean up the display
+		if rc == false then
+			-- send the error back on the stdout stream
+			print(err)
+			frame.display.text(" ", 1, 1)
+			frame.display.show()
+			frame.sleep(0.04)
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## multi tap
 // JavaScript file: multi-tap.js
 ```javascript
 import { FrameMsg, StdLua, TxCode, RxTap } from 'frame-msg';
-import frameApp from './lua/tap_frame_app.lua?raw';
+import frameApp from './lua/multi_tap_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();
@@ -1769,7 +2542,73 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/multi_tap_frame_app.lua
+// Corresponding Lua file: lua/multi_tap_frame_app.lua
+```lua
+local data = require('data.min')
+local code = require('code.min')
+local tap = require('tap.min')
+
+-- Phone to Frame flags
+TAP_SUBS_MSG = 0x10
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[TAP_SUBS_MSG] = code.parse_code
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+                    if (data.app_data[TAP_SUBS_MSG] ~= nil) then
+
+                        if data.app_data[TAP_SUBS_MSG].value == 1 then
+                            -- start subscription to tap events
+                            frame.imu.tap_callback(tap.send_tap)
+							frame.display.text('Listening for taps', 1, 1)
+							frame.display.show()
+                        else
+                            -- cancel subscription to tap events
+                            frame.imu.tap_callback(nil)
+							frame.display.text('Not listening for taps', 1, 1)
+							frame.display.show()
+                        end
+
+                        data.app_data[TAP_SUBS_MSG] = nil
+                    end
+
+				end
+
+				frame.sleep(0.01)
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## plain text
 // JavaScript file: plain-text.js
 ```javascript
@@ -1918,7 +2757,7 @@ app_loop()
 // JavaScript file: prog-sprite-jpg.js
 ```javascript
 import { FrameMsg, StdLua, TxSprite, TxImageSpriteBlock } from 'frame-msg';
-import frameApp from './lua/prog_sprite_frame_app.lua?raw';
+import frameApp from './lua/prog_sprite_jpg_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();
@@ -1996,12 +2835,88 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/prog_sprite_jpg_frame_app.lua
-## sprite ind png
-// JavaScript file: sprite-ind-png.js
+// Corresponding Lua file: lua/prog_sprite_jpg_frame_app.lua
+```lua
+local data = require('data.min')
+local image_sprite_block = require('image_sprite_block.min')
+
+-- Phone to Frame flags
+IMAGE_SPRITE_BLOCK = 0x20
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[IMAGE_SPRITE_BLOCK] = image_sprite_block.parse_image_sprite_block
+
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+					if (data.app_data[IMAGE_SPRITE_BLOCK] ~= nil) then
+						-- show the image sprite block
+						local isb = data.app_data[IMAGE_SPRITE_BLOCK]
+
+						-- it can be that we haven't got any sprites yet, so only proceed if we have a sprite
+						if isb.current_sprite_index > 0 then
+							-- either we have all the sprites, or we want to do progressive/incremental rendering
+							if isb.progressive_render or (isb.active_sprites == isb.total_sprites) then
+
+								for index = 1, isb.active_sprites do
+										local spr = isb.sprites[index]
+										local y_offset = isb.sprite_line_height * (index - 1)
+
+										-- set the palette the first time, all the sprites should have the same palette
+										if index == 1 then
+												image_sprite_block.set_palette(spr.num_colors, spr.palette_data)
+										end
+
+										frame.display.bitmap(1, y_offset + 1, spr.width, 2^spr.bpp, 0, spr.pixel_data)
+								end
+
+								frame.display.show()
+							end
+						end
+					end
+
+				end
+
+				-- can't sleep for long, might be lots of incoming bluetooth data to process
+				frame.sleep(0.001)
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
+## sprite indexed png
+// JavaScript file: sprite-indexed-png.js
 ```javascript
 import { FrameMsg, StdLua, TxSprite } from 'frame-msg';
-import frameApp from './lua/sprite_frame_app.lua?raw';
+import frameApp from './lua/sprite_indexed_png_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();
@@ -2087,12 +3002,76 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/sprite_ind_png_frame_app.lua
+// Corresponding Lua file: lua/sprite_indexed_png_frame_app.lua
+```lua
+local data = require('data.min')
+local sprite = require('sprite.min')
+
+-- Phone to Frame flags
+USER_SPRITE = 0x20
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[USER_SPRITE] = sprite.parse_sprite
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+					if data.app_data[USER_SPRITE] ~= nil then
+						local spr = data.app_data[USER_SPRITE]
+
+						-- set the palette in case it's different to the standard palette
+						sprite.set_palette(spr.num_colors, spr.palette_data)
+
+						-- show the sprite
+						frame.display.bitmap(1, 1, spr.width, 2^spr.bpp, 0, spr.pixel_data)
+						frame.display.show()
+
+						-- clear the object and run the garbage collector right away
+						data.app_data[USER_SPRITE] = nil
+						collectgarbage('collect')
+					end
+
+				end
+
+				-- can't sleep for long, might be lots of incoming bluetooth data to process
+				frame.sleep(0.001)
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## sprite jpg
 // JavaScript file: sprite-jpg.js
 ```javascript
 import { FrameMsg, StdLua, TxSprite } from 'frame-msg';
-import frameApp from './lua/sprite_frame_app.lua?raw';
+import frameApp from './lua/sprite_jpg_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();
@@ -2163,12 +3142,76 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/sprite_jpg_frame_app.lua
+// Corresponding Lua file: lua/sprite_jpg_frame_app.lua
+```lua
+local data = require('data.min')
+local sprite = require('sprite.min')
+
+-- Phone to Frame flags
+USER_SPRITE = 0x20
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[USER_SPRITE] = sprite.parse_sprite
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+					if data.app_data[USER_SPRITE] ~= nil then
+						local spr = data.app_data[USER_SPRITE]
+
+						-- set the palette in case it's different to the standard palette
+						sprite.set_palette(spr.num_colors, spr.palette_data)
+
+						-- show the sprite
+						frame.display.bitmap(1, 1, spr.width, 2^spr.bpp, 0, spr.pixel_data)
+						frame.display.show()
+
+						-- clear the object and run the garbage collector right away
+						data.app_data[USER_SPRITE] = nil
+						collectgarbage('collect')
+					end
+
+				end
+
+				-- can't sleep for long, might be lots of incoming bluetooth data to process
+				frame.sleep(0.001)
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## sprite move
 // JavaScript file: sprite-move.js
 ```javascript
 import { FrameMsg, StdLua, TxSprite, TxSpriteCoords, TxCode } from 'frame-msg';
-import frameApp from './lua/sprite_game_app.lua?raw';
+import frameApp from './lua/sprite_move_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();
@@ -2251,7 +3294,95 @@ export async function run() {
 ```
 
 
-Corresponding Lua file not found: lua/sprite_move_frame_app.lua
+// Corresponding Lua file: lua/sprite_move_frame_app.lua
+```lua
+local data = require('data.min')
+local sprite = require('sprite.min')
+local code = require('code.min')
+local sprite_coords = require('sprite_coords.min')
+
+-- Phone to Frame flags
+SPRITE_0 = 0x20
+SPRITE_COORDS = 0x40
+CODE_DRAW = 0x50
+
+-- register the message parsers so they are automatically called when matching data comes in
+data.parsers[SPRITE_0] = sprite.parse_sprite
+data.parsers[SPRITE_COORDS] = sprite_coords.parse_sprite_coords
+data.parsers[CODE_DRAW] = code.parse_code
+
+-- Main app loop
+function app_loop()
+	frame.display.text('Frame App Started', 1, 1)
+	frame.display.show()
+
+	-- tell the host program that the frameside app is ready (waiting on await_print)
+	print('Frame app is running')
+
+	while true do
+        rc, err = pcall(
+            function()
+				-- process any raw data items, if ready
+				local items_ready = data.process_raw_items()
+
+				-- one or more full messages received
+				if items_ready > 0 then
+
+					-- sprite resource saved for later drawing
+					-- also updates Frame's palette to match the sprite
+					if data.app_data[SPRITE_0] ~= nil then
+						local spr = data.app_data[SPRITE_0]
+
+						-- set Frame's palette to match the sprite in case it's different to the standard palette
+						sprite.set_palette(spr.num_colors, spr.palette_data)
+
+						collectgarbage('collect')
+					end
+
+					-- place a sprite on the display (backbuffer)
+					if data.app_data[SPRITE_COORDS] ~= nil then
+						local coords = data.app_data[SPRITE_COORDS]
+						local spr = data.app_data[coords.code]
+
+						if spr ~= nil then
+							frame.display.bitmap(coords.x, coords.y, spr.width, spr.num_colors, coords.offset, spr.pixel_data)
+						else
+							print('Sprite not found: ' .. tostring(coords.code))
+						end
+
+						data.app_data[SPRITE_COORDS] = nil
+					end
+
+
+					-- flip the buffers, show what we've drawn
+					if data.app_data[CODE_DRAW] ~= nil then
+						data.app_data[CODE_DRAW] = nil
+
+						frame.display.show()
+					end
+
+				end
+
+				-- can't sleep for long, might be lots of incoming bluetooth data to process
+				frame.sleep(0.001)
+			end
+		)
+		-- Catch an error (including the break signal) here
+		if rc == false then
+			-- send the error back on the stdout stream and clear the display
+			print(err)
+			frame.display.text(' ', 1, 1)
+			frame.display.show()
+			break
+		end
+	end
+end
+
+-- run the main app loop
+app_loop()
+```
+
+
 ## text sprite block
 // JavaScript file: text-sprite-block.js
 ```javascript

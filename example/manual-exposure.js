@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCaptureSettings, TxManualExpSettings, RxPhoto } from 'frame-msg';
-import frameApp from './lua/manualexp_frame_app.lua?raw';
+import frameApp from './lua/manual_exposure_frame_app.lua?raw';
 
 // Take a photo using the Frame camera with manual exposure settings and display it
 export async function run() {

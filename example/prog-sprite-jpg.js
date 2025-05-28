@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxSprite, TxImageSpriteBlock } from 'frame-msg';
-import frameApp from './lua/prog_sprite_frame_app.lua?raw';
+import frameApp from './lua/prog_sprite_jpg_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();

@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCode, RxTap } from 'frame-msg';
-import frameApp from './lua/tap_frame_app.lua?raw';
+import frameApp from './lua/multi_tap_frame_app.lua?raw';
 
 export async function run() {
   const frame = new FrameMsg();

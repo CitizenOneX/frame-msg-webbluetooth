@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCaptureSettings, TxAutoExpSettings, RxPhoto, RxAutoExpResult, TxCode } from 'frame-msg';
-import frameApp from './lua/autoexp_frame_app.lua?raw';
+import frameApp from './lua/auto_exposure_frame_app.lua?raw';
 
 // Take a sequence of photos using the Frame camera with custom auto exposure settings and display it
 export async function run() {

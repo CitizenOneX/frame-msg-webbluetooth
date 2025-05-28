@@ -1,5 +1,5 @@
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto, TxSprite, TxImageSpriteBlock } from 'frame-msg';
-import frameApp from './lua/camera_image_sprite_block_frame_app.lua?raw';
+import frameApp from './lua/camera_sprite_frame_app.lua?raw';
 
 // Take a photo using the Frame camera, send it to the host, and send it back as a sprite (TxImageSpriteBlock) to the Frame display
 export async function run() {

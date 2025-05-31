@@ -1106,7 +1106,14 @@ export async function run() {
 
     // create the element at the end of the body to display the photo
     const img = document.createElement('img');
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // Iterate 5 times
     for (let i = 0; i < 5; i++) {
@@ -1325,7 +1332,14 @@ export async function run() {
     // display the image on the web page
     const img = document.createElement('img');
     img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);
@@ -1493,7 +1507,14 @@ export async function run() {
     // display the image on the web page
     const img = document.createElement('img');
     img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // send the photo back to Frame as a sprite block
     console.log("Sending sprite back to Frame for display...");
@@ -1826,9 +1847,14 @@ export async function run() {
     console.log("Starting IMU stream...");
     await frame.sendMessage(0x40, new TxCode(1).pack());
 
-    // make an element at the end of the body to display the IMU data
-    const imuDataDiv = document.createElement('div');
-    document.body.appendChild(imuDataDiv);
+    // find the element to display the IMU data
+    const imuDataDiv = document.getElementById('text1');
+    if (imuDataDiv) {
+      // Clear any existing content in the div
+      while (imuDataDiv.firstChild) {
+        imuDataDiv.removeChild(imuDataDiv.firstChild);
+      }
+    }
 
     // loop 100 times - await for the IMU data to be received then print it to the console
     for (let i = 0; i < 100; i++) {
@@ -1849,9 +1875,6 @@ export async function run() {
 
     console.log("Stopping IMU stream...");
     await frame.sendMessage(0x40, new TxCode(0).pack());
-
-    // remove the IMU data display element from the document
-    document.body.removeChild(imuDataDiv);
 
     // stop the listener and clean up its resources
     rxIMU.detach(frame);
@@ -2006,7 +2029,14 @@ export async function run() {
 
     // create the element at the end of the body to display the photo
     const img = document.createElement('img');
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // loop 10 times - take a photo and display it in the div
     for (let i = 0; i < 10; i++) {
@@ -2021,9 +2051,6 @@ export async function run() {
       // overwriting the previous image
       img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
     }
-
-    // remove the image element from the document
-    document.body.removeChild(img);
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);
@@ -2194,7 +2221,14 @@ export async function run() {
     // display the image on the web page
     const img = document.createElement('img');
     img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);
@@ -2351,9 +2385,14 @@ export async function run() {
     const rxMeteringData = new RxMeteringData();
     const meteringDataQueue = await rxMeteringData.attach(frame);
 
-    // make an element at the end of the body to display the metering data
-    const meteringDataDiv = document.createElement('div');
-    document.body.appendChild(meteringDataDiv);
+    // find the element to display the metering data
+    const meteringDataDiv = document.getElementById('text1');
+    if (meteringDataDiv) {
+      // Clear any existing content in the div
+      while (meteringDataDiv.firstChild) {
+        meteringDataDiv.removeChild(meteringDataDiv.firstChild);
+      }
+    }
 
     // loop 30 times - await for the metering data to be received then print it to the console
     for (let i = 0; i < 30; i++) {
@@ -2367,9 +2406,6 @@ export async function run() {
         Matrix: R=${data.matrix_r}, G=${data.matrix_g}, B=${data.matrix_b}
       `;
     }
-
-    // remove the metering data display element from the document
-    document.body.removeChild(meteringDataDiv);
 
     // stop the listener and clean up its resources
     rxMeteringData.detach(frame);

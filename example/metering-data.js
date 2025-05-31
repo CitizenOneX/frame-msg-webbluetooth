@@ -42,9 +42,14 @@ export async function run() {
     const rxMeteringData = new RxMeteringData();
     const meteringDataQueue = await rxMeteringData.attach(frame);
 
-    // make an element at the end of the body to display the metering data
-    const meteringDataDiv = document.createElement('div');
-    document.body.appendChild(meteringDataDiv);
+    // find the element to display the metering data
+    const meteringDataDiv = document.getElementById('text1');
+    if (meteringDataDiv) {
+      // Clear any existing content in the div
+      while (meteringDataDiv.firstChild) {
+        meteringDataDiv.removeChild(meteringDataDiv.firstChild);
+      }
+    }
 
     // loop 30 times - await for the metering data to be received then print it to the console
     for (let i = 0; i < 30; i++) {
@@ -58,9 +63,6 @@ export async function run() {
         Matrix: R=${data.matrix_r}, G=${data.matrix_g}, B=${data.matrix_b}
       `;
     }
-
-    // remove the metering data display element from the document
-    document.body.removeChild(meteringDataDiv);
 
     // stop the listener and clean up its resources
     rxMeteringData.detach(frame);

@@ -46,9 +46,14 @@ export async function run() {
     console.log("Starting IMU stream...");
     await frame.sendMessage(0x40, new TxCode(1).pack());
 
-    // make an element at the end of the body to display the IMU data
-    const imuDataDiv = document.createElement('div');
-    document.body.appendChild(imuDataDiv);
+    // find the element to display the IMU data
+    const imuDataDiv = document.getElementById('text1');
+    if (imuDataDiv) {
+      // Clear any existing content in the div
+      while (imuDataDiv.firstChild) {
+        imuDataDiv.removeChild(imuDataDiv.firstChild);
+      }
+    }
 
     // loop 100 times - await for the IMU data to be received then print it to the console
     for (let i = 0; i < 100; i++) {
@@ -69,9 +74,6 @@ export async function run() {
 
     console.log("Stopping IMU stream...");
     await frame.sendMessage(0x40, new TxCode(0).pack());
-
-    // remove the IMU data display element from the document
-    document.body.removeChild(imuDataDiv);
 
     // stop the listener and clean up its resources
     rxIMU.detach(frame);

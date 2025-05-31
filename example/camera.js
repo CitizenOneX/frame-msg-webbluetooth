@@ -57,7 +57,14 @@ export async function run() {
     // display the image on the web page
     const img = document.createElement('img');
     img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);

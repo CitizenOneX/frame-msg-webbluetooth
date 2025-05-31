@@ -44,7 +44,14 @@ export async function run() {
 
     // create the element at the end of the body to display the photo
     const img = document.createElement('img');
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // loop 10 times - take a photo and display it in the div
     for (let i = 0; i < 10; i++) {
@@ -59,9 +66,6 @@ export async function run() {
       // overwriting the previous image
       img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
     }
-
-    // remove the image element from the document
-    document.body.removeChild(img);
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);

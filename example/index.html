@@ -34,62 +34,73 @@
   <body>
     <h1><code>frame-msg</code> Examples</h1>
     <em>Press <code>Ctrl+Shift+I</code> (or <code>Cmd+Option+I</code> on Mac) to open DevTools and show the browser console log</em>
-    <ul>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('plain-text')">Plain Text</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('multi-tap')">Multi-Tap</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('imu-stream')">IMU Streaming</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('code-value')">Code Value</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('camera')">Camera</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('live-camera-feed')">Live Camera Feed</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('auto-exposure')">Auto Exposure Photo</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('manual-exposure')">Manual Exposure Photo</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('metering-data')">Metering Data</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('camera-sprite')">Camera Sprite</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('sprite-jpg')">Sprite (JPEG)</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('sprite-indexed-png')">Sprite (Indexed PNG)</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('sprite-move')">Sprite Move</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('prog-sprite-jpg')">Progressive Sprite (JPEG)</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('audio-clip')">Audio Clip</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('audio-stream')">Audio Streaming</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('audio-video-stream')">Audio Video Streaming</button>
-      </li>
-      <li style="margin-bottom:8px;">
-        <button onclick="runExample('text-sprite-block')">Text Sprite Block</button>
-      </li>
-    </ul>
+    <table style="width: 100%; border: none;">
+      <tr>
+        <td style="vertical-align: top; border: none;">
+          <ul>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('plain-text')">Plain Text</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('multi-tap')">Multi-Tap</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('imu-stream')">IMU Streaming</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('code-value')">Code Value</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('camera')">Camera</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('live-camera-feed')">Live Camera Feed</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('auto-exposure')">Auto Exposure Photo</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('manual-exposure')">Manual Exposure Photo</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('metering-data')">Metering Data</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('camera-sprite')">Camera Sprite</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('sprite-jpg')">Sprite (JPEG)</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('sprite-indexed-png')">Sprite (Indexed PNG)</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('sprite-move')">Sprite Move</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('prog-sprite-jpg')">Progressive Sprite (JPEG)</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('audio-clip')">Audio Clip</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('audio-stream')">Audio Streaming</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('audio-video-stream')">Audio Video Streaming</button>
+            </li>
+            <li style="margin-bottom:8px;">
+              <button onclick="runExample('text-sprite-block')">Text Sprite Block</button>
+            </li>
+          </ul>
+        </td>
+        <td style="vertical-align: top; border: none;">
+          <div id="image1"></div>
+          <div id="image2"></div>
+          <div id="text1"></div>
+        </td>
+      </tr>
+    </table>
 
     <hr />
     <div id="log"></div>

@@ -52,7 +52,14 @@ export async function run() {
 
     // create the element at the end of the body to display the photo
     const img = document.createElement('img');
-    document.body.appendChild(img);
+    const imageDiv = document.getElementById('image1');
+    if (imageDiv) {
+      // Clear any existing content in the div
+      while (imageDiv.firstChild) {
+        imageDiv.removeChild(imageDiv.firstChild);
+      }
+      imageDiv.appendChild(img);
+    }
 
     // Iterate 5 times
     for (let i = 0; i < 5; i++) {

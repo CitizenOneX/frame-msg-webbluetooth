@@ -103,7 +103,7 @@
     </table>
 
     <hr />
-    <div id="log"></div>
+    <div id="log" style="width: 100%; overflow-x: auto;"></div>
     <script>
       const logElement = document.getElementById("log");
 
@@ -123,6 +123,7 @@
           const line = document.createElement('div');
           line.className = cssClass;
           line.textContent = `[${methodName}] ${message}`;
+          line.style.whiteSpace = 'pre'; // Preserve whitespace and prevent wrapping
           logElement.appendChild(line);
 
           // Auto-scroll to bottom

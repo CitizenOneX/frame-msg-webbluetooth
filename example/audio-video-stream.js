@@ -140,11 +140,19 @@ async function runPhotoProcessing(frame, photoQueue, getKeepRunning, photoInterv
             if (jpegBytes && jpegBytes.length > 0) {
                 console.log("Photo received, length:", jpegBytes.length);
                 if (!imageDisplayElement) {
+                    const imageDiv = document.getElementById('image1');
+                    if (!imageDiv) {
+                        console.error("Could not find div with id 'image1' for displaying photos.");
+                        return true; // Continue loop, maybe the div will appear later or handle gracefully
+                    }
                     imageDisplayElement = document.createElement('img');
                     imageDisplayElement.style.maxWidth = "100%";
                     imageDisplayElement.style.paddingTop = "5px";
-                    imageDisplayElement.alt = "Live photo from Frame";
-                    document.body.appendChild(imageDisplayElement);
+                    // Clear any existing content in the div before adding the new image
+                    while (imageDiv.firstChild) {
+                        imageDiv.removeChild(imageDiv.firstChild);
+                    }
+                    imageDiv.appendChild(imageDisplayElement);
                 }
                 const oldUrl = imageDisplayElement.src;
                 if (oldUrl && oldUrl.startsWith('blob:')) {

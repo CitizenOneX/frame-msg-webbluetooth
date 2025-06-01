@@ -682,11 +682,19 @@ async function runPhotoProcessing(frame, photoQueue, getKeepRunning, photoInterv
             if (jpegBytes && jpegBytes.length > 0) {
                 console.log("Photo received, length:", jpegBytes.length);
                 if (!imageDisplayElement) {
+                    const imageDiv = document.getElementById('image1');
+                    if (!imageDiv) {
+                        console.error("Could not find div with id 'image1' for displaying photos.");
+                        return true; // Continue loop, maybe the div will appear later or handle gracefully
+                    }
                     imageDisplayElement = document.createElement('img');
                     imageDisplayElement.style.maxWidth = "100%";
                     imageDisplayElement.style.paddingTop = "5px";
-                    imageDisplayElement.alt = "Live photo from Frame";
-                    document.body.appendChild(imageDisplayElement);
+                    // Clear any existing content in the div before adding the new image
+                    while (imageDiv.firstChild) {
+                        imageDiv.removeChild(imageDiv.firstChild);
+                    }
+                    imageDiv.appendChild(imageDisplayElement);
                 }
                 const oldUrl = imageDisplayElement.src;
                 if (oldUrl && oldUrl.startsWith('blob:')) {
@@ -1451,6 +1459,22 @@ app_loop()
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto, TxSprite, TxImageSpriteBlock } from 'frame-msg';
 import frameApp from './lua/camera_sprite_frame_app.lua?raw';
 
+/**
+ * Creates or updates an <img> element within a specified div to display a JPEG image.
+ * @param {Uint8Array} imageBytes - The byte array of the JPEG image.
+ * @param {string} mimeType - The mime type of the image bytes, e.g. 'image/jpeg'.
+ * @param {string} divId - The ID of the div element to display the image in.
+ */
+function displayImage(imageBytes, mimeType, divId) {
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(new Blob([imageBytes], { type: mimeType }));
+  const imageDiv = document.getElementById(divId);
+  if (imageDiv) {
+    imageDiv.innerHTML = ''; // Clear any existing content
+    imageDiv.appendChild(img);
+  }
+}
+
 // Take a photo using the Frame camera, send it to the host, and send it back as a sprite (TxImageSpriteBlock) to the Frame display
 export async function run() {
   const frame = new FrameMsg();
@@ -1504,21 +1528,16 @@ export async function run() {
     const jpegBytes = await photoQueue.get();
     console.log("Photo received, length:", jpegBytes.length);
 
-    // display the image on the web page
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
-    const imageDiv = document.getElementById('image1');
-    if (imageDiv) {
-      // Clear any existing content in the div
-      while (imageDiv.firstChild) {
-        imageDiv.removeChild(imageDiv.firstChild);
-      }
-      imageDiv.appendChild(img);
-    }
+    // display the source image on the web page
+    displayImage(jpegBytes, 'image/jpeg', 'image1');
 
     // send the photo back to Frame as a sprite block
     console.log("Sending sprite back to Frame for display...");
     const sprite = await TxSprite.fromImageBytes(jpegBytes);
+
+    // display the sprite on the web page
+    displayImage(sprite.toPngBytes(), 'image/png', 'image2');
+
     const isb = new TxImageSpriteBlock(sprite, 20);
     // send the Image Sprite Block header
     await frame.sendMessage(0x20, isb.pack());
@@ -2027,7 +2046,7 @@ export async function run() {
     const rxPhoto = new RxPhoto();
     const photoQueue = await rxPhoto.attach(frame);
 
-    // create the element at the end of the body to display the photo
+    // create the element to display the photo
     const img = document.createElement('img');
     const imageDiv = document.getElementById('image1');
     if (imageDiv) {
@@ -2795,6 +2814,22 @@ app_loop()
 import { FrameMsg, StdLua, TxSprite, TxImageSpriteBlock } from 'frame-msg';
 import frameApp from './lua/prog_sprite_jpg_frame_app.lua?raw';
 
+/**
+ * Creates or updates an <img> element within a specified div to display a JPEG image.
+ * @param {Uint8Array} imageBytes - The byte array of the JPEG image.
+ * @param {string} mimeType - The mime type of the image bytes, e.g. 'image/jpeg'.
+ * @param {string} divId - The ID of the div element to display the image in.
+ */
+function displayImage(imageBytes, mimeType, divId) {
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(new Blob([imageBytes], { type: mimeType }));
+  const imageDiv = document.getElementById(divId);
+  if (imageDiv) {
+    imageDiv.innerHTML = ''; // Clear any existing content
+    imageDiv.appendChild(img);
+  }
+}
+
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2835,7 +2870,15 @@ export async function run() {
     // read in the image bytes from "images/koala.jpg" and send it to the Frame
     const response = await fetch(new URL('./images/koala.jpg', import.meta.url));
     const imageBytes = new Uint8Array(await response.arrayBuffer());
+
+    // display the source image on the web page
+    displayImage(imageBytes, 'image/jpeg', 'image1');
+
     const sprite = await TxSprite.fromImageBytes(imageBytes);
+
+    // display the sprite on the web page
+    displayImage(sprite.toPngBytes(), 'image/png', 'image2');
+
     const isb = new TxImageSpriteBlock(sprite, 20);
     // send the Image Sprite Block header
     await frame.sendMessage(0x20, isb.pack());
@@ -3109,6 +3152,22 @@ app_loop()
 import { FrameMsg, StdLua, TxSprite } from 'frame-msg';
 import frameApp from './lua/sprite_jpg_frame_app.lua?raw';
 
+/**
+ * Creates or updates an <img> element within a specified div to display a JPEG image.
+ * @param {Uint8Array} imageBytes - The byte array of the JPEG image.
+ * @param {string} mimeType - The mime type of the image bytes, e.g. 'image/jpeg'.
+ * @param {string} divId - The ID of the div element to display the image in.
+ */
+function displayImage(imageBytes, mimeType, divId) {
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(new Blob([imageBytes], { type: mimeType }));
+  const imageDiv = document.getElementById(divId);
+  if (imageDiv) {
+    imageDiv.innerHTML = ''; // Clear any existing content
+    imageDiv.appendChild(img);
+  }
+}
+
 export async function run() {
   const frame = new FrameMsg();
 
@@ -3149,8 +3208,15 @@ export async function run() {
     // read in the image bytes from "images/koala.jpg" and send it to the Frame
     const response = await fetch(new URL('./images/koala.jpg', import.meta.url));
     const imageBytes = new Uint8Array(await response.arrayBuffer());
+
+    // display the source image on the web page
+    displayImage(imageBytes, 'image/jpeg', 'image1');
+
     const sprite = await TxSprite.fromImageBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
+
+    // display the sprite on the web page
+    displayImage(sprite.toPngBytes(), 'image/png', 'image2');
 
     // sleep for 5 seconds to allow the user to see the image
     await new Promise(resolve => setTimeout(resolve, 5000));

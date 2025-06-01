@@ -1,3 +1,9 @@
+## 0.3.1
+
+* Added `toPngBytes()` to `TxSprite` for debugging and visualization of quantized images
+* Fixed a bug in `TxSprite.fromImageBytes()` that was not correctly mapping images to the quantized palette
+* Example: updated various TxSprite examples to display the source and quantized images
+
 ## 0.3.0
 
 * Updated to frame-ble dependency to 0.3.0

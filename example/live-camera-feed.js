@@ -42,7 +42,7 @@ export async function run() {
     const rxPhoto = new RxPhoto();
     const photoQueue = await rxPhoto.attach(frame);
 
-    // create the element at the end of the body to display the photo
+    // create the element to display the photo
     const img = document.createElement('img');
     const imageDiv = document.getElementById('image1');
     if (imageDiv) {

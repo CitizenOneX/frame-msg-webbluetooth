@@ -1,6 +1,22 @@
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto, TxSprite, TxImageSpriteBlock } from 'frame-msg';
 import frameApp from './lua/camera_sprite_frame_app.lua?raw';
 
+/**
+ * Creates or updates an <img> element within a specified div to display a JPEG image.
+ * @param {Uint8Array} imageBytes - The byte array of the JPEG image.
+ * @param {string} mimeType - The mime type of the image bytes, e.g. 'image/jpeg'.
+ * @param {string} divId - The ID of the div element to display the image in.
+ */
+function displayImage(imageBytes, mimeType, divId) {
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(new Blob([imageBytes], { type: mimeType }));
+  const imageDiv = document.getElementById(divId);
+  if (imageDiv) {
+    imageDiv.innerHTML = ''; // Clear any existing content
+    imageDiv.appendChild(img);
+  }
+}
+
 // Take a photo using the Frame camera, send it to the host, and send it back as a sprite (TxImageSpriteBlock) to the Frame display
 export async function run() {
   const frame = new FrameMsg();
@@ -54,21 +70,16 @@ export async function run() {
     const jpegBytes = await photoQueue.get();
     console.log("Photo received, length:", jpegBytes.length);
 
-    // display the image on the web page
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
-    const imageDiv = document.getElementById('image1');
-    if (imageDiv) {
-      // Clear any existing content in the div
-      while (imageDiv.firstChild) {
-        imageDiv.removeChild(imageDiv.firstChild);
-      }
-      imageDiv.appendChild(img);
-    }
+    // display the source image on the web page
+    displayImage(jpegBytes, 'image/jpeg', 'image1');
 
     // send the photo back to Frame as a sprite block
     console.log("Sending sprite back to Frame for display...");
     const sprite = await TxSprite.fromImageBytes(jpegBytes);
+
+    // display the sprite on the web page
+    displayImage(sprite.toPngBytes(), 'image/png', 'image2');
+
     const isb = new TxImageSpriteBlock(sprite, 20);
     // send the Image Sprite Block header
     await frame.sendMessage(0x20, isb.pack());

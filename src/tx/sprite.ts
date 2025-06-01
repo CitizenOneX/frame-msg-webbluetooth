@@ -105,7 +105,7 @@ export class TxSprite {
         // log width and height after resizing
         console.log(`Resized image to ${image.width}x${image.height}`);
 
-       // Quantize the image to a maximum of 16 colors using image-q
+        // Quantize the image to a maximum of 16 colors using image-q
         const inPointContainer = IQ.utils.PointContainer.fromUint8Array(image.getRGBAData(), image.width, image.height);
         console.log(`PointContainer created with ${inPointContainer.getPointArray().length} points.`);
 
@@ -118,7 +118,24 @@ export class TxSprite {
         const outPointContainer = IQ.applyPaletteSync(inPointContainer, palette);
         console.log(`OutPointContainer: ${outPointContainer.getPointArray().length} points.`);
 
-        const indexedPixels = new Uint8Array(outPointContainer.toUint32Array());
+        // manually map the quntized pixel data to indices
+        const palettePoints = palette.getPointContainer().getPointArray();
+        const outputPoints = outPointContainer.getPointArray();
+        const indexedPixels = new Uint8Array(outputPoints.length);
+
+        for (let i = 0; i < outputPoints.length; i++) {
+            const p = outputPoints[i];
+            const r = p.r, g = p.g, b = p.b, a = p.a;
+
+            // Find matching index in palette
+            const idx = palettePoints.findIndex(q => q.r === r && q.g === g && q.b === b && q.a === a);
+            if (idx === -1) {
+                throw new Error(`Could not find palette index for pixel ${i} with color (${r},${g},${b},${a})`);
+            }
+
+            indexedPixels[i] = idx;
+        }
+
         console.log(`Indexed pixel data size: ${indexedPixels.length}.`);
 
         // Convert image-q palette to our flat Uint8Array RGB format
@@ -247,31 +264,66 @@ export class TxSprite {
         }
         return packed;
     }
+
+    /**
+     * Converts the TxSprite to a PNG image as an ArrayBuffer.
+     * Intended for debugging and visualization purposes.
+     * @returns The PNG image data as an ArrayBuffer.
+     */
+    toPngBytes(): ArrayBuffer {
+        // Create a PNG using the indexed pixel data and custom palette
+        // log the input parameters
+        console.log(`Creating PNG: width=${this.width}, height=${this.height}, numColors=${this.numColors}, paletteData length=${this.paletteData.length}, pixelData length=${this.pixelData.length}`);
+
+        return TxSprite._makeRGBAPngFromIndexed(
+            this.width,
+            this.height,
+            this.paletteData,
+            this.pixelData
+        );
+    }
+
+    /**
+     * Create a true-color PNG from an indexed palette and pixel data.
+     * @param width Image width in pixels
+     * @param height Image height in pixels
+     * @param paletteRGB Flat RGB Uint8Array of colors: [r0,g0,b0, r1,g1,b1, ..., rN,gN,bN]
+     * @param pixelIndices Uint8Array of palette indices (length = width * height)
+     * @returns PNG as ArrayBuffer
+     */
+    private static _makeRGBAPngFromIndexed(
+        width: number,
+        height: number,
+        paletteRGB: Uint8Array,
+        pixelIndices: Uint8Array
+    ): ArrayBuffer {
+
+        const numPixels = width * height;
+        if (pixelIndices.length !== numPixels) {
+            throw new Error(`Pixel index data (${pixelIndices.length}) does not match image size (${numPixels}).`);
+        }
+
+        if (paletteRGB.length % 3 !== 0) {
+            throw new Error("Palette must be a flat RGB array of triplets.");
+        }
+
+        const rgba = new Uint8Array(numPixels * 4);
+        for (let i = 0; i < numPixels; i++) {
+            const idx = pixelIndices[i];
+            if (idx < 0 || idx >= paletteRGB.length / 3) {
+                throw new Error(`Pixel index ${idx} out of bounds for palette of length ${paletteRGB.length / 3}.`);
+            }
+            const r = paletteRGB[idx * 3] ?? 128;
+            const g = paletteRGB[idx * 3 + 1] ?? 128;
+            const b = paletteRGB[idx * 3 + 2] ?? 128;
+
+            const offset = i * 4;
+            rgba[offset] = r;
+            rgba[offset + 1] = g;
+            rgba[offset + 2] = b;
+            rgba[offset + 3] = 255; // fully opaque
+        }
+
+        return UPNG.encode([rgba.buffer], width, height, 0); // 0 = lossless
+    }
 }
-
-// Example usage:
-// async function testSpriteWithImageJS() {
-//     // 1. Get an ArrayBuffer of an image (e.g., from a file input or fetch)
-//     // For testing, you can create a simple one or use a base64 string converted to ArrayBuffer
-//     const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mNkYPhfz0AEYAIAKoABs680gAAAAABJRU5ErkJggg=="; // 2x2 red PNG
-//     const imageBytes = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0)).buffer;
-
-//     try {
-//         console.log("Testing fromImageBytes with image-js...");
-//         const sprite = await TxSprite.fromImageBytes(imageBytes, 48000, true);
-//         console.log("Sprite created:", sprite);
-//         const packedData = sprite.pack();
-//         console.log("Packed sprite data:", packedData);
-
-//         // Test fromIndexedPngBytes (requires an already indexed PNG)
-//         // For this, you'd need a PNG that is already 16 colors or less.
-//         // const indexedPngBytes = ... ;
-//         // const indexedSprite = await TxSprite.fromIndexedPngBytes(indexedPngBytes, false);
-//         // console.log("Packed indexed sprite data:", indexedSprite.pack());
-
-//     } catch (error) {
-//         console.error("Error in testSpriteWithImageJS:", error);
-//     }
-// }
-
-// testSpriteWithImageJS();

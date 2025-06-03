@@ -10,9 +10,9 @@ data.parsers[TEXT_FLAG] = plain_text.parse_plain_text
 -- draw the specified text on the display
 function print_text(text)
     local i = 0
-    for line in text:gmatch('([^\n]*)\n?') do
+    for line in text.string:gmatch('([^\n]*)\n?') do
         if line ~= "" then
-            frame.display.text(line, 1, i * 60 + 1)
+            frame.display.text(line, text.x, i * 60 + text.y, {color=text.color})
             i = i + 1
         end
     end
@@ -37,7 +37,7 @@ function app_loop()
 
 					if data.app_data[TEXT_FLAG] ~= nil and data.app_data[TEXT_FLAG].string ~= nil then
 						local text = data.app_data[TEXT_FLAG]
-						print_text(text.string)
+						print_text(text)
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away

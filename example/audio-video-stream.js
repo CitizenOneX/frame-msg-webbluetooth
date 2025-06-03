@@ -230,7 +230,6 @@ export async function run() {
         console.log("Connecting to Frame...");
         await frame.connect();
         console.log('Connected to Frame.');
-        await frame.sendBreakSignal();
 
         const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', { awaitPrint: true });
         console.log(`Battery Level/Memory used: ${battMem}`);
@@ -295,6 +294,13 @@ export async function run() {
         });
 
         console.log('Audio and photo processing initiated. Waiting for shutdown signal...');
+
+        // Let it run for 20 seconds or until shutdown is otherwise signaled
+        await new Promise(resolve => setTimeout(resolve, 20000));
+
+        console.log("Requesting Frame to stop audio stream...");
+        await frame.sendMessage(0x30, new TxCode(0).pack());
+
         await shutdownPromise; // Wait until shutdown is signaled
 
     } catch (error) {

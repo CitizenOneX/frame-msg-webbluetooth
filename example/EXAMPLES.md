@@ -24,9 +24,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -58,8 +55,8 @@ export async function run() {
     // Assuming 0x30 is the correct message ID and new TxCode(1).pack() is the start command
     await frame.sendMessage(0x30, new TxCode(1).pack());
 
-    console.log("Recording audio for 5 seconds...");
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log("Recording audio for 10 seconds...");
+    await new Promise(resolve => setTimeout(resolve, 10000));
 
     // Stop the audio stream
     console.log("Stopping audio...");
@@ -311,8 +308,6 @@ export async function run() {
         const deviceId = await frame.connect();
         console.log('Connected to:', deviceId);
 
-        await frame.sendBreakSignal();
-
         const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', { awaitPrint: true });
         console.log(`Battery Level/Memory used: ${battMem}`);
 
@@ -376,11 +371,11 @@ export async function run() {
 
         const audioProcessingPromise = processAudioChunks();
 
-        // 5. Stream for a certain duration (e.g., 10 seconds for this example)
-        console.log("Streaming audio to speakers for 10 seconds...");
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        // 5. Stream for a certain duration (e.g., 20 seconds for this example)
+        console.log("Streaming audio to speakers for 20 seconds...");
+        await new Promise(resolve => setTimeout(resolve, 20000));
 
-        console.log("10 seconds elapsed. Stopping audio stream...");
+        console.log("20 seconds elapsed. Stopping audio stream...");
 
     } catch (error) {
         console.error("Error during audio streaming:", error);
@@ -772,7 +767,6 @@ export async function run() {
         console.log("Connecting to Frame...");
         await frame.connect();
         console.log('Connected to Frame.');
-        await frame.sendBreakSignal();
 
         const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', { awaitPrint: true });
         console.log(`Battery Level/Memory used: ${battMem}`);
@@ -837,6 +831,13 @@ export async function run() {
         });
 
         console.log('Audio and photo processing initiated. Waiting for shutdown signal...');
+
+        // Let it run for 20 seconds or until shutdown is otherwise signaled
+        await new Promise(resolve => setTimeout(resolve, 20000));
+
+        console.log("Requesting Frame to stop audio stream...");
+        await frame.sendMessage(0x30, new TxCode(0).pack());
+
         await shutdownPromise; // Wait until shutdown is signaled
 
     } catch (error) {
@@ -1074,9 +1075,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -1112,7 +1110,7 @@ export async function run() {
     // and send them to Frame before iterating over the auto exposure steps
     await frame.sendMessage(0x0e, new TxAutoExpSettings().pack());
 
-    // create the element at the end of the body to display the photo
+    // create the element to display the photo
     const img = document.createElement('img');
     const imageDiv = document.getElementById('image1');
     if (imageDiv) {
@@ -1123,8 +1121,8 @@ export async function run() {
       imageDiv.appendChild(img);
     }
 
-    // Iterate 5 times
-    for (let i = 0; i < 5; i++) {
+    // Iterate 20 times
+    for (let i = 0; i < 20; i++) {
       // send the code to trigger the single step of the auto exposure algorithm
       await frame.sendMessage(0x0f, new TxCode().pack());
 
@@ -1146,9 +1144,6 @@ export async function run() {
       // display the image on the web page
       img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
     }
-
-    // remove the image element from the document
-    document.body.removeChild(img);
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);
@@ -1294,9 +1289,6 @@ export async function run() {
     console.log("Connecting to Frame...");
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
-
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
 
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
@@ -1486,9 +1478,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -1547,9 +1536,9 @@ export async function run() {
       await frame.sendMessage(0x20, spr.pack());
     }
 
-    // sleep for 5 seconds to allow the user to see the image
-    console.log("Displaying sprite for 5 seconds...");
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 seconds to allow the user to see the image
+    console.log("Displaying sprite for 20 seconds...");
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);
@@ -1700,9 +1689,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -1831,9 +1817,6 @@ export async function run() {
     console.log("Connecting to Frame...");
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
-
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
 
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
@@ -2005,7 +1988,7 @@ app_loop()
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/live_camera_feed_frame_app.lua?raw';
 
-// Take a photo using the Frame camera and display it
+// Take a sequence of photos using the Frame camera and display them
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2015,9 +1998,6 @@ export async function run() {
     console.log("Connecting to Frame...");
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
-
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
 
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
@@ -2057,8 +2037,8 @@ export async function run() {
       imageDiv.appendChild(img);
     }
 
-    // loop 10 times - take a photo and display it in the div
-    for (let i = 0; i < 10; i++) {
+    // loop 20 times - take a photo and display it in the div
+    for (let i = 0; i < 20; i++) {
       // Request the photo by sending a TxCaptureSettings message
       await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
 
@@ -2191,9 +2171,6 @@ export async function run() {
     console.log("Connecting to Frame...");
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
-
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
 
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
@@ -2374,9 +2351,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -2413,8 +2387,8 @@ export async function run() {
       }
     }
 
-    // loop 30 times - await for the metering data to be received then print it to the console
-    for (let i = 0; i < 30; i++) {
+    // loop 60 times - await for the metering data to be received then print it to the console
+    for (let i = 0; i < 60; i++) {
       await frame.sendMessage(0x12, new TxCode(1).pack());
       const data = await meteringDataQueue.get();
       console.log("Metering Data:", data);
@@ -2527,9 +2501,6 @@ export async function run() {
     console.log("Connecting to Frame...");
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
-
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
 
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
@@ -2680,9 +2651,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -2708,11 +2676,13 @@ export async function run() {
 
     // Send the text for display on Frame
     // Note that the frameside app is expecting a message of type TxPlainText on msgCode 0x0a
-    const displayStrings = ["red", "orange", "yellow", "red\norange\nyellow", " "];
-    for (const displayString of displayStrings) {
-      await frame.sendMessage(0x0a, new TxPlainText(displayString).pack());
+    const displayStrings = ["white", "gray", "red", "pink", "dark\nbrown", "brown", "orange", "yellow", "dark\ngreen", "green", "light\ngreen", "night\nblue", "sea\nblue", "sky\nblue", "cloud\nblue"];
+    for (let i = 0; i < displayStrings.length; i++) {
+      await frame.sendMessage(0x0a, new TxPlainText(displayStrings[i], 50, 50, i+1).pack());
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     }
+    // clear the display
+    await frame.sendMessage(0x0a, new TxPlainText(" ").pack());
 
     // unhook the print handler
     frame.detachPrintResponseHandler()
@@ -2751,9 +2721,9 @@ data.parsers[TEXT_FLAG] = plain_text.parse_plain_text
 -- draw the specified text on the display
 function print_text(text)
     local i = 0
-    for line in text:gmatch('([^\n]*)\n?') do
+    for line in text.string:gmatch('([^\n]*)\n?') do
         if line ~= "" then
-            frame.display.text(line, 1, i * 60 + 1)
+            frame.display.text(line, text.x, i * 60 + text.y, {color=text.color})
             i = i + 1
         end
     end
@@ -2778,7 +2748,7 @@ function app_loop()
 
 					if data.app_data[TEXT_FLAG] ~= nil and data.app_data[TEXT_FLAG].string ~= nil then
 						local text = data.app_data[TEXT_FLAG]
-						print_text(text.string)
+						print_text(text)
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
@@ -2840,9 +2810,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -2888,8 +2855,8 @@ export async function run() {
       await frame.sendMessage(0x20, spr.pack());
     }
 
-    // sleep for 5 seconds to allow the user to see the image
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // unhook the print handler
     frame.detachPrintResponseHandler()
@@ -3007,9 +2974,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -3040,14 +3004,17 @@ export async function run() {
     let sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
+    // sleep for 20 seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
+
     // send the 2-bit image to Frame
     response = await fetch(new URL('./images/street_2bit.png', import.meta.url));
     imageBytes = new Uint8Array(await response.arrayBuffer());
     sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // sleep for 5 more seconds to allow the user to see the image
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 more seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // send the 4-bit image to Frame
     response = await fetch(new URL('./images/hotdog_4bit.png', import.meta.url));
@@ -3055,8 +3022,8 @@ export async function run() {
     sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // sleep for 5 seconds to allow the user to see the image
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // unhook the print handler
     frame.detachPrintResponseHandler()
@@ -3178,9 +3145,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -3218,8 +3182,8 @@ export async function run() {
     // display the sprite on the web page
     displayImage(sprite.toPngBytes(), 'image/png', 'image2');
 
-    // sleep for 5 seconds to allow the user to see the image
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // unhook the print handler
     frame.detachPrintResponseHandler()
@@ -3325,9 +3289,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -3358,9 +3319,9 @@ export async function run() {
     let sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // send the sprite coordinates to Frame 10 times with random positions on msgCode 0x40
+    // send the sprite coordinates to Frame 20 times with random positions on msgCode 0x40
     // then send a message of type TxCode on msgCode 0x50 to draw the sprite
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       const x = Math.floor(Math.random() * 441);
       const y = Math.floor(Math.random() * 201);
       const coords = new TxSpriteCoords(0x20, x, y, 0);
@@ -3504,9 +3465,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -3544,8 +3502,8 @@ export async function run() {
       await frame.sendMessage(0x20, spr.pack());
     }
 
-    // sleep for 10 seconds to allow the user to see the text
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    // sleep for 20 seconds to allow the user to see the text
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // unhook the print handler
     frame.detachPrintResponseHandler()

@@ -12,9 +12,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -50,7 +47,7 @@ export async function run() {
     // and send them to Frame before iterating over the auto exposure steps
     await frame.sendMessage(0x0e, new TxAutoExpSettings().pack());
 
-    // create the element at the end of the body to display the photo
+    // create the element to display the photo
     const img = document.createElement('img');
     const imageDiv = document.getElementById('image1');
     if (imageDiv) {
@@ -61,8 +58,8 @@ export async function run() {
       imageDiv.appendChild(img);
     }
 
-    // Iterate 5 times
-    for (let i = 0; i < 5; i++) {
+    // Iterate 20 times
+    for (let i = 0; i < 20; i++) {
       // send the code to trigger the single step of the auto exposure algorithm
       await frame.sendMessage(0x0f, new TxCode().pack());
 
@@ -84,9 +81,6 @@ export async function run() {
       // display the image on the web page
       img.src = URL.createObjectURL(new Blob([jpegBytes], { type: 'image/jpeg' }));
     }
-
-    // remove the image element from the document
-    document.body.removeChild(img);
 
     // stop the photo listener and clean up its resources
     rxPhoto.detach(frame);

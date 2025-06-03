@@ -75,8 +75,6 @@ export async function run() {
         const deviceId = await frame.connect();
         console.log('Connected to:', deviceId);
 
-        await frame.sendBreakSignal();
-
         const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', { awaitPrint: true });
         console.log(`Battery Level/Memory used: ${battMem}`);
 
@@ -140,11 +138,11 @@ export async function run() {
 
         const audioProcessingPromise = processAudioChunks();
 
-        // 5. Stream for a certain duration (e.g., 10 seconds for this example)
-        console.log("Streaming audio to speakers for 10 seconds...");
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        // 5. Stream for a certain duration (e.g., 20 seconds for this example)
+        console.log("Streaming audio to speakers for 20 seconds...");
+        await new Promise(resolve => setTimeout(resolve, 20000));
 
-        console.log("10 seconds elapsed. Stopping audio stream...");
+        console.log("20 seconds elapsed. Stopping audio stream...");
 
     } catch (error) {
         console.error("Error during audio streaming:", error);

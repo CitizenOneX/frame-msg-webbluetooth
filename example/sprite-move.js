@@ -11,9 +11,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -44,9 +41,9 @@ export async function run() {
     let sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // send the sprite coordinates to Frame 10 times with random positions on msgCode 0x40
+    // send the sprite coordinates to Frame 20 times with random positions on msgCode 0x40
     // then send a message of type TxCode on msgCode 0x50 to draw the sprite
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       const x = Math.floor(Math.random() * 441);
       const y = Math.floor(Math.random() * 201);
       const coords = new TxSpriteCoords(0x20, x, y, 0);

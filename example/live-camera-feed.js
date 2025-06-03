@@ -1,7 +1,7 @@
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/live_camera_feed_frame_app.lua?raw';
 
-// Take a photo using the Frame camera and display it
+// Take a sequence of photos using the Frame camera and display them
 export async function run() {
   const frame = new FrameMsg();
 
@@ -11,9 +11,6 @@ export async function run() {
     console.log("Connecting to Frame...");
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
-
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
 
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
@@ -53,8 +50,8 @@ export async function run() {
       imageDiv.appendChild(img);
     }
 
-    // loop 10 times - take a photo and display it in the div
-    for (let i = 0; i < 10; i++) {
+    // loop 20 times - take a photo and display it in the div
+    for (let i = 0; i < 20; i++) {
       // Request the photo by sending a TxCaptureSettings message
       await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
 

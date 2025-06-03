@@ -11,9 +11,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -44,14 +41,17 @@ export async function run() {
     let sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
+    // sleep for 20 seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
+
     // send the 2-bit image to Frame
     response = await fetch(new URL('./images/street_2bit.png', import.meta.url));
     imageBytes = new Uint8Array(await response.arrayBuffer());
     sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // sleep for 5 more seconds to allow the user to see the image
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 more seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // send the 4-bit image to Frame
     response = await fetch(new URL('./images/hotdog_4bit.png', import.meta.url));
@@ -59,8 +59,8 @@ export async function run() {
     sprite = await TxSprite.fromIndexedPngBytes(imageBytes);
     await frame.sendMessage(0x20, sprite.pack());
 
-    // sleep for 5 seconds to allow the user to see the image
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // unhook the print handler
     frame.detachPrintResponseHandler()

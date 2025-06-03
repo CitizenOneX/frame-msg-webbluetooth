@@ -13,9 +13,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -47,8 +44,8 @@ export async function run() {
     // Assuming 0x30 is the correct message ID and new TxCode(1).pack() is the start command
     await frame.sendMessage(0x30, new TxCode(1).pack());
 
-    console.log("Recording audio for 5 seconds...");
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log("Recording audio for 10 seconds...");
+    await new Promise(resolve => setTimeout(resolve, 10000));
 
     // Stop the audio stream
     console.log("Stopping audio...");

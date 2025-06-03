@@ -11,9 +11,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -39,11 +36,13 @@ export async function run() {
 
     // Send the text for display on Frame
     // Note that the frameside app is expecting a message of type TxPlainText on msgCode 0x0a
-    const displayStrings = ["red", "orange", "yellow", "red\norange\nyellow", " "];
-    for (const displayString of displayStrings) {
-      await frame.sendMessage(0x0a, new TxPlainText(displayString).pack());
+    const displayStrings = ["white", "gray", "red", "pink", "dark\nbrown", "brown", "orange", "yellow", "dark\ngreen", "green", "light\ngreen", "night\nblue", "sea\nblue", "sky\nblue", "cloud\nblue"];
+    for (let i = 0; i < displayStrings.length; i++) {
+      await frame.sendMessage(0x0a, new TxPlainText(displayStrings[i], 50, 50, i+1).pack());
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     }
+    // clear the display
+    await frame.sendMessage(0x0a, new TxPlainText(" ").pack());
 
     // unhook the print handler
     frame.detachPrintResponseHandler()

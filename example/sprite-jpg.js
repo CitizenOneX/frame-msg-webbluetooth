@@ -27,9 +27,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -67,8 +64,8 @@ export async function run() {
     // display the sprite on the web page
     displayImage(sprite.toPngBytes(), 'image/png', 'image2');
 
-    // sleep for 5 seconds to allow the user to see the image
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // sleep for 20 seconds to allow the user to see the image
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // unhook the print handler
     frame.detachPrintResponseHandler()

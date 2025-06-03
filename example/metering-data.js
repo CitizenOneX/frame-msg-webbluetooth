@@ -12,9 +12,6 @@ export async function run() {
     const deviceId = await frame.connect();
     console.log('Connected to:', deviceId);
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // debug only: check our current battery level and memory usage (which varies between 16kb and 31kb or so even after the VM init)
     const battMem = await frame.sendLua('print(frame.battery_level() .. " / " .. collectgarbage("count"))', {awaitPrint: true});
     console.log(`Battery Level/Memory used: ${battMem}`);
@@ -51,8 +48,8 @@ export async function run() {
       }
     }
 
-    // loop 30 times - await for the metering data to be received then print it to the console
-    for (let i = 0; i < 30; i++) {
+    // loop 60 times - await for the metering data to be received then print it to the console
+    for (let i = 0; i < 60; i++) {
       await frame.sendMessage(0x12, new TxCode(1).pack());
       const data = await meteringDataQueue.get();
       console.log("Metering Data:", data);

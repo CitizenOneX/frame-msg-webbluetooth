@@ -23,9 +23,6 @@ export async function run() {
   try {
     const deviceId = await frame.connect();
 
-    // Send a break signal to the Frame in case it is in a loop
-    await frame.sendBreakSignal();
-
     // send the std lua files to Frame
     await frame.uploadStdLuaLibs([StdLua.DataMin, StdLua.CameraMin]);
 

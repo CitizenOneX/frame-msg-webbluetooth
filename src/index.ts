@@ -2,13 +2,21 @@ export { FrameMsg, StdLua } from './frame-msg';
 export { AsyncQueue } from './async-queue';
 
 export { TxPlainText } from './tx/plain-text';
+export type { TxPlainTextOptions } from './tx/plain-text';
 export { TxCaptureSettings } from './tx/capture-settings';
+export type { TxCaptureSettingsOptions } from './tx/capture-settings';
 export { TxCode } from './tx/code';
+export type { TxCodeOptions } from './tx/code';
 export { TxImageSpriteBlock } from './tx/image-sprite-block';
+export type { TxImageSpriteBlockOptions } from './tx/image-sprite-block';
 export { TxManualExpSettings } from './tx/manual-exp-settings';
+export type { TxManualExpSettingsOptions } from './tx/manual-exp-settings';
 export { TxAutoExpSettings } from './tx/auto-exp-settings';
+export type { TxAutoExpSettingsOptions } from './tx/auto-exp-settings';
 export { TxSprite } from './tx/sprite';
+export type { TxSpriteOptions } from './tx/sprite';
 export { TxSpriteCoords } from './tx/sprite-coords';
+export type { TxSpriteCoordsOptions } from './tx/sprite-coords';
 export { TxTextSpriteBlock } from './tx/text-sprite-block';
 export type { TxTextSpriteBlockOptions } from './tx/text-sprite-block';
 
@@ -23,3 +31,4 @@ export type { BrightnessDetails, BrightnessData, AutoExpResultData, RxAutoExpRes
 export { RxPhoto } from './rx/photo';
 export type { RxPhotoOptions, JpegQuality } from './rx/photo';
 export { RxTap } from './rx/tap';
+export type { RxTapOptions } from './rx/tap';

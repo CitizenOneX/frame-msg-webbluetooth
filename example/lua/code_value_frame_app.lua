@@ -1,11 +1,11 @@
 local data = require('data.min')
 local code = require('code.min')
 
--- Phone to Frame flags
-USER_CODE_FLAG = 0x42
+-- Phone to Frame msg codes
+USER_CODE_MSG = 0x42
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[USER_CODE_FLAG] = code.parse_code
+data.parsers[USER_CODE_MSG] = code.parse_code
 
 -- Main app loop
 function app_loop()
@@ -24,13 +24,13 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if data.app_data[USER_CODE_FLAG] ~= nil then
-						local code = data.app_data[USER_CODE_FLAG]
+					if data.app_data[USER_CODE_MSG] ~= nil then
+						local code = data.app_data[USER_CODE_MSG]
 						frame.display.text('Code received: ' .. tostring(code.value), 1, 1)
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
-						data.app_data[USER_CODE_FLAG] = nil
+						data.app_data[USER_CODE_MSG] = nil
 						collectgarbage('collect')
 					end
 

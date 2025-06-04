@@ -1,7 +1,7 @@
 -- Module to send individual Tap events as single-byte messages to the host
 local _M = {}
 
--- Frame to Phone flags
+-- Frame to Phone msg codes
 local TAP_MSG = 0x09
 
 function _M.send_tap()

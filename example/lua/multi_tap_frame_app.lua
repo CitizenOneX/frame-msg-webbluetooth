@@ -2,7 +2,7 @@ local data = require('data.min')
 local code = require('code.min')
 local tap = require('tap.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 TAP_SUBS_MSG = 0x10
 
 -- register the message parsers so they are automatically called when matching data comes in

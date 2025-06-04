@@ -146,7 +146,7 @@ local data = require('data.min')
 local code = require('code.min')
 local audio = require('audio.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 AUDIO_SUBS_MSG = 0x30
 
 -- register the message parsers so they are automatically called when matching data comes in
@@ -457,7 +457,7 @@ local data = require('data.min')
 local code = require('code.min')
 local audio = require('audio.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 AUDIO_SUBS_MSG = 0x30
 
 -- register the message parsers so they are automatically called when matching data comes in
@@ -962,7 +962,7 @@ local code = require('code.min')
 local audio = require('audio.min')
 local camera = require('camera.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 AUDIO_SUBS_MSG = 0x30
 CAPTURE_SETTINGS_MSG = 0x0d
 
@@ -1205,7 +1205,7 @@ local data = require('data.min')
 local camera = require('camera.min')
 local code = require('code.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 AUTOEXP_SETTINGS_MSG = 0x0e
 AUTOEXP_STEP_MSG = 0x0f
@@ -1406,7 +1406,7 @@ export async function run() {
 local data = require('data.min')
 local camera = require('camera.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 
 -- register the message parser so it's automatically called when matching data comes in
@@ -1615,7 +1615,7 @@ local data = require('data.min')
 local camera = require('camera.min')
 local image_sprite_block = require('image_sprite_block.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 IMAGE_SPRITE_BLOCK = 0x20
 
@@ -1795,11 +1795,11 @@ export async function run() {
 local data = require('data.min')
 local code = require('code.min')
 
--- Phone to Frame flags
-USER_CODE_FLAG = 0x42
+-- Phone to Frame msg codes
+USER_CODE_MSG = 0x42
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[USER_CODE_FLAG] = code.parse_code
+data.parsers[USER_CODE_MSG] = code.parse_code
 
 -- Main app loop
 function app_loop()
@@ -1818,13 +1818,13 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if data.app_data[USER_CODE_FLAG] ~= nil then
-						local code = data.app_data[USER_CODE_FLAG]
+					if data.app_data[USER_CODE_MSG] ~= nil then
+						local code = data.app_data[USER_CODE_MSG]
 						frame.display.text('Code received: ' .. tostring(code.value), 1, 1)
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
-						data.app_data[USER_CODE_FLAG] = nil
+						data.app_data[USER_CODE_MSG] = nil
 						collectgarbage('collect')
 					end
 
@@ -1967,10 +1967,10 @@ local data = require('data.min')
 local code = require('code.min')
 local imu = require('imu.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 IMU_SUBS_MSG = 0x40
 
--- Frame to Phone flags
+-- Frame to Phone msg codes
 IMU_DATA_MSG = 0x0A
 
 -- register the message parsers so they are automatically called when matching data comes in
@@ -2146,7 +2146,7 @@ export async function run() {
 local data = require('data.min')
 local camera = require('camera.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 
 -- register the message parser so it's automatically called when matching data comes in
@@ -2329,7 +2329,7 @@ local data = require('data.min')
 local camera = require('camera.min')
 local code = require('code.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 MANUALEXP_SETTINGS_MSG = 0x0c
 
@@ -2510,7 +2510,7 @@ local data = require('data.min')
 local camera = require('camera.min')
 local code = require('code.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 METERING_QUERY_MSG = 0x12
 
 -- register the message parser so it's automatically called when matching data comes in
@@ -2659,7 +2659,7 @@ local data = require('data.min')
 local code = require('code.min')
 local tap = require('tap.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 TAP_SUBS_MSG = 0x10
 
 -- register the message parsers so they are automatically called when matching data comes in
@@ -2805,11 +2805,11 @@ export async function run() {
 local data = require('data.min')
 local plain_text = require('plain_text.min')
 
--- Phone to Frame flags
-TEXT_FLAG = 0x0a
+-- Phone to Frame msg codes
+TEXT_MSG = 0x0a
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[TEXT_FLAG] = plain_text.parse_plain_text
+data.parsers[TEXT_MSG] = plain_text.parse_plain_text
 
 -- draw the specified text on the display
 function print_text(text)
@@ -2839,13 +2839,13 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if data.app_data[TEXT_FLAG] ~= nil and data.app_data[TEXT_FLAG].string ~= nil then
-						local text = data.app_data[TEXT_FLAG]
+					if data.app_data[TEXT_MSG] ~= nil and data.app_data[TEXT_MSG].string ~= nil then
+						local text = data.app_data[TEXT_MSG]
 						print_text(text)
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
-						data.app_data[TEXT_FLAG] = nil
+						data.app_data[TEXT_MSG] = nil
 						collectgarbage('collect')
 					end
 
@@ -2993,11 +2993,11 @@ export async function run() {
 local data = require('data.min')
 local image_sprite_block = require('image_sprite_block.min')
 
--- Phone to Frame flags
-IMAGE_SPRITE_BLOCK = 0x20
+-- Phone to Frame msg codes
+IMAGE_SPRITE_BLOCK_MSG = 0x20
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[IMAGE_SPRITE_BLOCK] = image_sprite_block.parse_image_sprite_block
+data.parsers[IMAGE_SPRITE_BLOCK_MSG] = image_sprite_block.parse_image_sprite_block
 
 
 -- Main app loop
@@ -3017,9 +3017,9 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if (data.app_data[IMAGE_SPRITE_BLOCK] ~= nil) then
+					if (data.app_data[IMAGE_SPRITE_BLOCK_MSG] ~= nil) then
 						-- show the image sprite block
-						local isb = data.app_data[IMAGE_SPRITE_BLOCK]
+						local isb = data.app_data[IMAGE_SPRITE_BLOCK_MSG]
 
 						-- it can be that we haven't got any sprites yet, so only proceed if we have a sprite
 						if isb.current_sprite_index > 0 then
@@ -3170,11 +3170,11 @@ export async function run() {
 local data = require('data.min')
 local sprite = require('sprite.min')
 
--- Phone to Frame flags
-USER_SPRITE = 0x20
+-- Phone to Frame msg codes
+USER_SPRITE_MSG = 0x20
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[USER_SPRITE] = sprite.parse_sprite
+data.parsers[USER_SPRITE_MSG] = sprite.parse_sprite
 
 -- Main app loop
 function app_loop()
@@ -3193,8 +3193,8 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if data.app_data[USER_SPRITE] ~= nil then
-						local spr = data.app_data[USER_SPRITE]
+					if data.app_data[USER_SPRITE_MSG] ~= nil then
+						local spr = data.app_data[USER_SPRITE_MSG]
 
 						-- set the palette in case it's different to the standard palette
 						sprite.set_palette(spr.num_colors, spr.palette_data)
@@ -3204,7 +3204,7 @@ function app_loop()
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
-						data.app_data[USER_SPRITE] = nil
+						data.app_data[USER_SPRITE_MSG] = nil
 						collectgarbage('collect')
 					end
 
@@ -3342,11 +3342,11 @@ export async function run() {
 local data = require('data.min')
 local sprite = require('sprite.min')
 
--- Phone to Frame flags
-USER_SPRITE = 0x20
+-- Phone to Frame msg codes
+USER_SPRITE_MSG = 0x20
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[USER_SPRITE] = sprite.parse_sprite
+data.parsers[USER_SPRITE_MSG] = sprite.parse_sprite
 
 -- Main app loop
 function app_loop()
@@ -3365,8 +3365,8 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if data.app_data[USER_SPRITE] ~= nil then
-						local spr = data.app_data[USER_SPRITE]
+					if data.app_data[USER_SPRITE_MSG] ~= nil then
+						local spr = data.app_data[USER_SPRITE_MSG]
 
 						-- set the palette in case it's different to the standard palette
 						sprite.set_palette(spr.num_colors, spr.palette_data)
@@ -3376,7 +3376,7 @@ function app_loop()
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
-						data.app_data[USER_SPRITE] = nil
+						data.app_data[USER_SPRITE_MSG] = nil
 						collectgarbage('collect')
 					end
 
@@ -3462,8 +3462,8 @@ export async function run() {
     // send the sprite coordinates to Frame 20 times with random positions on msgCode 0x40
     // then send a message of type TxCode on msgCode 0x50 to draw the sprite
     for (let i = 0; i < 20; i++) {
-      const x = Math.floor(Math.random() * 441);
-      const y = Math.floor(Math.random() * 201);
+      const x = Math.floor(Math.random() * 441) + 1;
+      const y = Math.floor(Math.random() * 201) + 1;
       const coords = new TxSpriteCoords({ code: 0x20, x: x, y: y, offset: 0 });
       await frame.sendMessage(0x40, coords.pack());
 
@@ -3504,15 +3504,15 @@ local sprite = require('sprite.min')
 local code = require('code.min')
 local sprite_coords = require('sprite_coords.min')
 
--- Phone to Frame flags
-SPRITE_0 = 0x20
-SPRITE_COORDS = 0x40
-CODE_DRAW = 0x50
+-- Phone to Frame msg codes
+SPRITE_0_MSG = 0x20
+SPRITE_COORDS_MSG = 0x40
+CODE_DRAW_MSG = 0x50
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[SPRITE_0] = sprite.parse_sprite
-data.parsers[SPRITE_COORDS] = sprite_coords.parse_sprite_coords
-data.parsers[CODE_DRAW] = code.parse_code
+data.parsers[SPRITE_0_MSG] = sprite.parse_sprite
+data.parsers[SPRITE_COORDS_MSG] = sprite_coords.parse_sprite_coords
+data.parsers[CODE_DRAW_MSG] = code.parse_code
 
 -- Main app loop
 function app_loop()
@@ -3533,8 +3533,8 @@ function app_loop()
 
 					-- sprite resource saved for later drawing
 					-- also updates Frame's palette to match the sprite
-					if data.app_data[SPRITE_0] ~= nil then
-						local spr = data.app_data[SPRITE_0]
+					if data.app_data[SPRITE_0_MSG] ~= nil then
+						local spr = data.app_data[SPRITE_0_MSG]
 
 						-- set Frame's palette to match the sprite in case it's different to the standard palette
 						sprite.set_palette(spr.num_colors, spr.palette_data)
@@ -3543,8 +3543,8 @@ function app_loop()
 					end
 
 					-- place a sprite on the display (backbuffer)
-					if data.app_data[SPRITE_COORDS] ~= nil then
-						local coords = data.app_data[SPRITE_COORDS]
+					if data.app_data[SPRITE_COORDS_MSG] ~= nil then
+						local coords = data.app_data[SPRITE_COORDS_MSG]
 						local spr = data.app_data[coords.code]
 
 						if spr ~= nil then
@@ -3553,13 +3553,13 @@ function app_loop()
 							print('Sprite not found: ' .. tostring(coords.code))
 						end
 
-						data.app_data[SPRITE_COORDS] = nil
+						data.app_data[SPRITE_COORDS_MSG] = nil
 					end
 
 
 					-- flip the buffers, show what we've drawn
-					if data.app_data[CODE_DRAW] ~= nil then
-						data.app_data[CODE_DRAW] = nil
+					if data.app_data[CODE_DRAW_MSG] ~= nil then
+						data.app_data[CODE_DRAW_MSG] = nil
 
 						frame.display.show()
 					end
@@ -3673,11 +3673,11 @@ export async function run() {
 local data = require('data.min')
 local text_sprite_block = require('text_sprite_block.min')
 
--- Phone to Frame flags
-TEXT_SPRITE_BLOCK = 0x20
+-- Phone to Frame msg codes
+TEXT_SPRITE_BLOCK_MSG = 0x20
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[TEXT_SPRITE_BLOCK] = text_sprite_block.parse_text_sprite_block
+data.parsers[TEXT_SPRITE_BLOCK_MSG] = text_sprite_block.parse_text_sprite_block
 
 
 -- Main app loop
@@ -3697,21 +3697,15 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if (data.app_data[TEXT_SPRITE_BLOCK] ~= nil) then
+					if (data.app_data[TEXT_SPRITE_BLOCK_MSG] ~= nil) then
 						-- show the text sprite block
-						local tsb = data.app_data[TEXT_SPRITE_BLOCK]
+						local tsb = data.app_data[TEXT_SPRITE_BLOCK_MSG]
 
 						-- it can be that we haven't got any sprites yet, so only proceed if we have a sprite
 						if tsb.first_sprite_index > 0 then
 							-- either we have all the sprites, or we want to do progressive/incremental rendering
 							if tsb.progressive_render or (tsb.active_sprites == tsb.total_sprites) then
 
-								-- for index = 1, tsb.active_sprites do
-								-- 		local spr = tsb.sprites[index]
-								-- 		local y_offset = 50 * (index - 1) -- TODO get proper offsets
-
-								-- 		frame.display.bitmap(1, y_offset + 1, spr.width, 2^spr.bpp, 0, spr.pixel_data)
-								-- end
 								for index, spr in ipairs(tsb.sprites) do
 									frame.display.bitmap(1, tsb.offsets[index].y + 1, spr.width, 2^spr.bpp, 0+index, spr.pixel_data)
 								end

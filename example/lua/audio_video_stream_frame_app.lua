@@ -3,7 +3,7 @@ local code = require('code.min')
 local audio = require('audio.min')
 local camera = require('camera.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 AUDIO_SUBS_MSG = 0x30
 CAPTURE_SETTINGS_MSG = 0x0d
 

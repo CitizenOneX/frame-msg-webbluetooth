@@ -2,7 +2,7 @@ local data = require('data.min')
 local camera = require('camera.min')
 local image_sprite_block = require('image_sprite_block.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 IMAGE_SPRITE_BLOCK = 0x20
 

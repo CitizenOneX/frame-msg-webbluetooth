@@ -46,19 +46,19 @@ export class RxMeteringData {
 
     /**
      * Process incoming metering data packets.
-     * @param data Uint8Array containing metering data with a flag byte prefix,
+     * @param data Uint8Array containing metering data with a msgCode byte prefix,
      * followed by 6 unsigned bytes (spot r,g,b, matrix r,g,b).
      */
     public handleData(data: Uint8Array): void {
         if (!this.queue) {
-            console.warn("RxMeteringData: Received data but queue not initialized - call attach() first"); //
+            console.warn("RxMeteringData: Received data but queue not initialized - call attach() first");
             return;
         }
 
         // Python: struct.unpack("<BBBBBB", data[1:7])
         // This means 6 unsigned bytes starting from index 1 of the data array.
-        // data[0] is the flag/msg_code, data[1] through data[6] are the values.
-        if (data.length < 7) { // Needs 1 byte for flag + 6 bytes for data
+        // data[0] is the msgCode, data[1] through data[6] are the values.
+        if (data.length < 7) { // Needs 1 byte for msgCode + 6 bytes for data
             console.warn("RxMeteringData: Data packet too short for metering data.");
             return;
         }

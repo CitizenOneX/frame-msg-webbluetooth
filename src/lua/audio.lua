@@ -1,7 +1,7 @@
 -- Module for sending raw PCM audio Data from Frame's microphone
 local _M = {}
 
--- Frame to Host flags
+-- Frame to Host msg codes
 local AUDIO_DATA_FINAL_MSG = 0x06
 local AUDIO_DATA_NON_FINAL_MSG = 0x05
 

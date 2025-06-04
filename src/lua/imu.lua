@@ -1,7 +1,7 @@
 -- Module handling raw IMU Data (accelerometer, magnetometer)
 local _M = {}
 
--- Frame to phone flags
+-- Frame to phone msg codes
 local IMU_DATA_MSG = 0x0A
 
 function _M.send_imu_data(msg_code)

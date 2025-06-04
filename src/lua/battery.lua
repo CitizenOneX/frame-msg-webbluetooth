@@ -1,7 +1,7 @@
 -- Module handling periodic battery level reports on a standard message code
 local _M = {}
 
--- Frame to phone flags
+-- Frame to phone msg codes
 local BATTERY_MSG = 0x0c
 
 function _M.send_batt_if_elapsed(prev, interval)

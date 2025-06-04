@@ -32,11 +32,11 @@ _M.parsers = parsers
 function _M.update_app_data_accum(data)
     rc, err = pcall(
         function()
-            local msg_flag = string.byte(data, 1)
-            local item = _M.app_data_accum[msg_flag]
+            local msg_code = string.byte(data, 1)
+            local item = _M.app_data_accum[msg_code]
             if item == nil or next(item) == nil then
                 item = { chunk_table = {}, num_chunks = 0, size = 0, recv_bytes = 0 }
-                _M.app_data_accum[msg_flag] = item
+                _M.app_data_accum[msg_code] = item
             end
 
             if item.num_chunks == 0 then
@@ -47,12 +47,12 @@ function _M.update_app_data_accum(data)
                 item.recv_bytes = string.len(data) - 3
 
                 if item.recv_bytes == item.size then
-                    _M.app_data_block[msg_flag] = item.chunk_table[1]
+                    _M.app_data_block[msg_code] = item.chunk_table[1]
                     item.size = 0
                     item.recv_bytes = 0
                     item.num_chunks = 0
                     item.chunk_table[1] = nil
-                    app_data_accum[msg_flag] = item
+                    app_data_accum[msg_code] = item
                 end
             else
                 item.chunk_table[item.num_chunks + 1] = string.sub(data, 2)
@@ -63,13 +63,13 @@ function _M.update_app_data_accum(data)
                 -- but don't parse yet
                 if item.recv_bytes == item.size then
                     collectgarbage('collect')
-                    _M.app_data_block[msg_flag] = table.concat(item.chunk_table)
+                    _M.app_data_block[msg_code] = table.concat(item.chunk_table)
                     for k, v in pairs(item.chunk_table) do item.chunk_table[k] = nil end
                     collectgarbage('collect')
                     item.size = 0
                     item.recv_bytes = 0
                     item.num_chunks = 0
-                    _M.app_data_accum[msg_flag] = item
+                    _M.app_data_accum[msg_code] = item
                 end
             end
 
@@ -111,17 +111,17 @@ function _M.process_raw_items()
         function()
             collectgarbage('collect')
 
-            for flag, block in pairs(_M.app_data_block) do
+            for msg_code, block in pairs(_M.app_data_block) do
                 -- parse the app_data_block item into an app_data item
-                if _M.parsers[flag] == nil then
-                    print('Error: No parser for flag: ' .. tostring(flag))
+                if _M.parsers[msg_code] == nil then
+                    print('Error: No parser for msg_code: ' .. tostring(msg_code))
                 else
                     -- call the parser and pass in the previous value in
                     -- case it accumulates, like the text_sprite_block can
-                    _M.app_data[flag] = _M.parsers[flag](block, _M.app_data[flag])
+                    _M.app_data[msg_code] = _M.parsers[msg_code](block, _M.app_data[msg_code])
 
                     -- then clear out the raw data
-                    _M.app_data_block[flag] = nil
+                    _M.app_data_block[msg_code] = nil
 
                     processed = processed + 1
                 end

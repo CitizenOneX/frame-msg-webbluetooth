@@ -77,7 +77,7 @@ export class RxAutoExpResult {
 
     /**
      * Process incoming auto exposure result data packets.
-     * @param data Uint8Array containing auto exposure result data with a flag byte prefix,
+     * @param data Uint8Array containing auto exposure result data with a msgCode byte prefix,
      * followed by 16 little-endian floats (64 bytes).
      */
     public handleData(data: Uint8Array): void {
@@ -88,16 +88,16 @@ export class RxAutoExpResult {
 
         // Python: struct.unpack("<ffffff ff ffff ffff", data[1:65])
         // This means 16 little-endian floats, starting from index 1 of the data array.
-        // data[0] is the flag/msg_code. Data for floats is data[1] through data[64].
-        // Total length required: 1 (flag) + 16 * 4 (floats) = 65 bytes.
+        // data[0] is the msgCode. Data for floats is data[1] through data[64].
+        // Total length required: 1 (msgCode) + 16 * 4 (floats) = 65 bytes.
         if (data.length < 65) {
             console.warn(`RxAutoExpResult: Data packet too short for auto exposure result data. Expected 65 bytes, got ${data.length}.`);
             return;
         }
 
         const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
-        const littleEndian = true; // Corresponds to "<" in Python struct.unpack
-        let offset = 1; // Start reading after the flag byte
+        const littleEndian = true;
+        let offset = 1; // Start reading after the msgCode byte
 
         const unpacked: number[] = [];
         for (let i = 0; i < 16; i++) {
@@ -106,31 +106,31 @@ export class RxAutoExpResult {
         }
 
         const result: AutoExpResultData = {
-            error: unpacked[0], //
-            shutter: unpacked[1], //
-            analog_gain: unpacked[2], //
-            red_gain: unpacked[3], //
-            green_gain: unpacked[4], //
-            blue_gain: unpacked[5], //
+            error: unpacked[0],
+            shutter: unpacked[1],
+            analog_gain: unpacked[2],
+            red_gain: unpacked[3],
+            green_gain: unpacked[4],
+            blue_gain: unpacked[5],
             brightness: {
-                center_weighted_average: unpacked[6], //
-                scene: unpacked[7], //
+                center_weighted_average: unpacked[6],
+                scene: unpacked[7],
                 matrix: {
-                    r: unpacked[8], //
-                    g: unpacked[9], //
-                    b: unpacked[10], //
-                    average: unpacked[11], //
+                    r: unpacked[8],
+                    g: unpacked[9],
+                    b: unpacked[10],
+                    average: unpacked[11],
                 },
                 spot: {
-                    r: unpacked[12], //
-                    g: unpacked[13], //
-                    b: unpacked[14], //
-                    average: unpacked[15], //
+                    r: unpacked[12],
+                    g: unpacked[13],
+                    b: unpacked[14],
+                    average: unpacked[15],
                 },
             },
         };
 
-        this.queue.put(result); //
+        this.queue.put(result);
     }
 
     /**
@@ -139,16 +139,16 @@ export class RxAutoExpResult {
      * @returns A promise that resolves to an AsyncQueue that will receive AutoExpResultData objects.
      */
     public async attach(frame: FrameMsg): Promise<AsyncQueue<AutoExpResultData | null>> {
-        this.queue = new AsyncQueue<AutoExpResultData | null>(); //
+        this.queue = new AsyncQueue<AutoExpResultData | null>();
 
         // Subscribe for notifications
         frame.registerDataResponseHandler(
             this,
             [this.msgCode],
-            this.handleData.bind(this) //
+            this.handleData.bind(this)
         );
 
-        return this.queue; //
+        return this.queue;
     }
 
     /**
@@ -156,10 +156,10 @@ export class RxAutoExpResult {
      * @param frame The FrameMsg instance.
      */
     public detach(frame: FrameMsg): void {
-        frame.unregisterDataResponseHandler(this); //
+        frame.unregisterDataResponseHandler(this);
         if (this.queue) {
             this.queue.clear(); // Clear any pending items from AsyncQueue
         }
-        this.queue = null; //
+        this.queue = null;
     }
 }

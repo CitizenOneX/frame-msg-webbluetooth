@@ -2,7 +2,7 @@ local data = require('data.min')
 local code = require('code.min')
 local audio = require('audio.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 AUDIO_SUBS_MSG = 0x30
 
 -- register the message parsers so they are automatically called when matching data comes in

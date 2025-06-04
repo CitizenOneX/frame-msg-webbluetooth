@@ -1,7 +1,7 @@
 local data = require('data.min')
 local camera = require('camera.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 
 -- register the message parser so it's automatically called when matching data comes in

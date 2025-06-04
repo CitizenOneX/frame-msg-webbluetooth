@@ -2,10 +2,10 @@ local data = require('data.min')
 local code = require('code.min')
 local imu = require('imu.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 IMU_SUBS_MSG = 0x40
 
--- Frame to Phone flags
+-- Frame to Phone msg codes
 IMU_DATA_MSG = 0x0A
 
 -- register the message parsers so they are automatically called when matching data comes in

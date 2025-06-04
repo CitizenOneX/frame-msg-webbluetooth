@@ -25,11 +25,11 @@ export enum RxAudioBitDepth {
  * Configuration options for the RxAudio class.
  */
 export interface RxAudioOptions {
-    /** Optional flag indicating a non-final audio chunk. Defaults to 0x05. */
-    nonFinalChunkFlag?: number;
-    /** Optional flag indicating the final audio chunk. Defaults to 0x06. */
-    finalChunkFlag?: number;
-    /** Optional flag to enable streaming mode. Defaults to false (clip mode). */
+    /** Optional msgCode indicating a non-final audio chunk. Defaults to 0x05. */
+    nonFinalChunkMsgCode?: number;
+    /** Optional msgCode indicating the final audio chunk. Defaults to 0x06. */
+    finalChunkMsgCode?: number;
+    /** Optional msgCode to enable streaming mode. Defaults to false (clip mode). */
     streaming?: boolean;
     /** Optional audio sample rate. Defaults to 8000 Hz. */
     sampleRate?: RxAudioSampleRate;
@@ -48,8 +48,8 @@ export interface RxAudioOptions {
  * signed 8 or signed 16 bit integers, and the source bit depth in Lua should match.
  */
 export class RxAudio {
-    private nonFinalChunkFlag: number;
-    private finalChunkFlag: number;
+    private nonFinalChunkMsgCode: number;
+    private finalChunkMsgCode: number;
     private streaming: boolean;
     private bitDepth: number; // 8 or 16
     private sampleRate: RxAudioSampleRate; // 8000 or 16000
@@ -67,8 +67,8 @@ export class RxAudio {
      * @param options Configuration options for the audio handler.
      */
     constructor(options: RxAudioOptions = {}) {
-        this.nonFinalChunkFlag = options.nonFinalChunkFlag ?? 0x05;
-        this.finalChunkFlag = options.finalChunkFlag ?? 0x06;
+        this.nonFinalChunkMsgCode = options.nonFinalChunkMsgCode ?? 0x05;
+        this.finalChunkMsgCode = options.finalChunkMsgCode ?? 0x06;
         this.streaming = options.streaming ?? false; // Default to clip mode
         this.sampleRate = options.sampleRate ?? RxAudioSampleRate.SAMPLE_RATE_8KHZ; // Default to 8000 Hz
         this.bitDepth = options.bitDepth ?? RxAudioBitDepth.BIT_DEPTH_8; // Default to 8 bits
@@ -102,33 +102,33 @@ export class RxAudio {
      * It processes the data based on the configured mode (streaming or clip) and bit depth,
      * then places the processed audio chunk (Int8Array or Int16Array) onto the `queue`.
      * A null is placed on the queue to signal the end of a stream or clip.
-     * @param data A Uint8Array containing the raw audio data, prefixed with a flag byte.
+     * @param data A Uint8Array containing the raw audio data, prefixed with a msgCode byte.
      */
-    public handleData(data: Uint8Array): void { //
+    public handleData(data: Uint8Array): void {
         if (!this.queue) {
-            console.warn("RxAudio: Received data but queue not initialized - call attach() first"); //
+            console.warn("RxAudio: Received data but queue not initialized - call attach() first");
             return;
         }
 
-        const flag = data[0]; //
-        const chunk = data.slice(1); //
+        const msgCode = data[0];
+        const chunk = data.slice(1);
 
-        if (this.streaming) { //
+        if (this.streaming) {
             if (chunk.length > 0) {
                 this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(chunk) : new Int16Array(chunk.buffer));
             }
-            if (flag === this.finalChunkFlag) {
+            if (msgCode === this.finalChunkMsgCode) {
                 this.queue.put(null); // Signal end of stream
             }
         } else {
             // In single-clip mode, accumulate chunks
-            this._audioBuffer.push(chunk); //
+            this._audioBuffer.push(chunk);
 
-            if (flag === this.finalChunkFlag) { //
+            if (msgCode === this.finalChunkMsgCode) {
                 const completeAudio = this.concatenateAudioData();
                 this._audioBuffer = []; // Reset buffer
 
-                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(completeAudio): new Int16Array(completeAudio.buffer)); //
+                this.queue.put(this.bitDepth === RxAudioBitDepth.BIT_DEPTH_8 ? Int8Array.from(completeAudio): new Int16Array(completeAudio.buffer));
                 this.queue.put(null); // Signal end of clip
             }
         }
@@ -147,7 +147,7 @@ export class RxAudio {
         // Subscribe to the data response feed
         frame.registerDataResponseHandler(
             this,
-            [this.nonFinalChunkFlag, this.finalChunkFlag],
+            [this.nonFinalChunkMsgCode, this.finalChunkMsgCode],
             this.handleData.bind(this) //
         );
 
@@ -159,13 +159,13 @@ export class RxAudio {
      * It unregisters the data handler and clears the audio queue.
      * @param frame The FrameMsg instance to detach from.
      */
-    public detach(frame: FrameMsg): void { //
+    public detach(frame: FrameMsg): void {
         // Unsubscribe from the data response feed
-        frame.unregisterDataResponseHandler(this); //
+        frame.unregisterDataResponseHandler(this);
         if (this.queue) {
             this.queue.clear();
         }
-        this.queue = null; //
+        this.queue = null;
         this._audioBuffer = []; // Reset audio buffer
     }
 
@@ -195,9 +195,9 @@ export class RxAudio {
         sampleRate: number = 8000,
         bitsPerSample: number = 8,
         channels: number = 1
-    ): Uint8Array { //
-        const byteRate = sampleRate * channels * (bitsPerSample / 8); //
-        const dataSize = pcmData.length; //
+    ): Uint8Array {
+        const byteRate = sampleRate * channels * (bitsPerSample / 8);
+        const dataSize = pcmData.length;
         const fileSizeField = 36 + dataSize; // This is the RIFF chunk size field (ChunkSize in WAV spec)
 
         const headerLength = 44;

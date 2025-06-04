@@ -6,10 +6,10 @@ import { AsyncQueue } from '../async-queue';
  */
 export interface RxTapOptions {
     /**
-     * Optional flag byte used to identify tap event packets received from the Frame device.
+     * Optional msgCode byte used to identify tap event packets received from the Frame device.
      * Defaults to 0x09.
      */
-    tapFlag?: number;
+    msgCode?: number;
     /**
      * Optional time window in seconds within which multiple taps are counted as a single event.
      * Defaults to 0.3 seconds.
@@ -25,7 +25,7 @@ export interface RxTapOptions {
  * The tap count is reset if no taps are detected within the threshold time.
  */
 export class RxTap {
-    private tapFlag: number;
+    private msgCode: number;
     private threshold: number; // in milliseconds
     /** Asynchronous queue for tap count events. Each event is a number representing the count of taps. Null if not attached. */
     public queue: AsyncQueue<number> | null;
@@ -36,10 +36,10 @@ export class RxTap {
     /**
      * Constructs an instance of the RxTap class.
      * @param options Configuration options for the tap handler.
-     *                Includes `tapFlag` (default: 0x09) and `threshold` in seconds (default: 0.3).
+     *                Includes `msgCode` (default: 0x09) and `threshold` in seconds (default: 0.3).
      */
     constructor(options: RxTapOptions = {}) {
-        this.tapFlag = options.tapFlag ?? 0x09;
+        this.msgCode = options.msgCode ?? 0x09;
         this.threshold = (options.threshold ?? 0.3) * 1000; // Convert seconds to milliseconds
         this.queue = null;
         this.lastTapTime = 0;
@@ -66,13 +66,12 @@ export class RxTap {
         this.thresholdTimeoutId = null; // Clear the timeout ID after execution
     }
 
-    // The data handler now expects a Uint8Array as per FrameMsg.ts
     /**
      * Handles incoming tap event data packets.
      * This method is typically called by a `FrameMsg` instance when a tap event is received.
      * It debounces rapid taps and counts taps within a defined threshold.
      * The accumulated tap count is placed onto the `queue` when the threshold timer expires.
-     * @param data A Uint8Array containing the tap event data (usually just the flag byte).
+     * @param data A Uint8Array containing the tap event data (usually just the msgCode byte).
      */
     public handleData(data: Uint8Array): void {
         if (!this.queue) {
@@ -107,7 +106,7 @@ export class RxTap {
         this.tapCount = 0;
 
         // Ensure the handler is bound to `this` context of the RxTap instance
-        frame.registerDataResponseHandler(this, [this.tapFlag], this.handleData.bind(this));
+        frame.registerDataResponseHandler(this, [this.msgCode], this.handleData.bind(this));
 
         return this.queue;
     }

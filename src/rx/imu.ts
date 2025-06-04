@@ -95,8 +95,8 @@ export class IMUData {
  * Options for RxIMU constructor.
  */
 export interface RxIMUOptions {
-    /** Optional flag to identify IMU data packets. Defaults to 0x0A. */
-    imuFlag?: number;
+    /** Optional msgCode to identify IMU data packets. Defaults to 0x0A. */
+    msgCode?: number;
     /** Optional number of samples to average for smoothing. Defaults to 1 (no smoothing). */
     smoothingSamples?: number;
 }
@@ -106,7 +106,7 @@ export interface RxIMUOptions {
  * It processes magnetometer and accelerometer data, providing smoothed values.
  */
 export class RxIMU {
-    private imuFlag: number;
+    private msgCode: number;
     private smoothingSamples: number;
 
     /** Asynchronous queue for received IMUData objects. Null if not attached. */
@@ -119,7 +119,7 @@ export class RxIMU {
      * @param options Configuration options for the IMU handler.
      */
     constructor(options: RxIMUOptions = {}) {
-        this.imuFlag = options.imuFlag ?? 0x0A; //
+        this.msgCode = options.msgCode ?? 0x0A; //
         this.smoothingSamples = options.smoothingSamples ?? 1; //
 
         this.queue = null;
@@ -129,7 +129,7 @@ export class RxIMU {
 
     /**
      * Process incoming IMU data packets.
-     * @param data Uint8Array containing IMU data with flag byte prefix.
+     * @param data Uint8Array containing IMU data with msgCode byte prefix.
      */
     public handleData(data: Uint8Array): void { //
         if (!this.queue) {
@@ -137,7 +137,7 @@ export class RxIMU {
             return;
         }
 
-        // Data is expected to be: [flag, ?, val1_L, val1_H, val2_L, val2_H, ...]
+        // Data is expected to be: [msgCode, ?, val1_L, val1_H, val2_L, val2_H, ...]
         // Python: struct.unpack('<6h', data[2:14])
         // '<' is little-endian, 'h' is a 2-byte signed short. 6 shorts = 12 bytes.
         // data[2:14] means starting from index 2, up to (but not including) index 14.
@@ -181,7 +181,7 @@ export class RxIMU {
         // Subscribe for notifications
         frame.registerDataResponseHandler(
             this,
-            [this.imuFlag],
+            [this.msgCode],
             this.handleData.bind(this)
         );
 

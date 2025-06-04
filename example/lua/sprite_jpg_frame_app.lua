@@ -1,11 +1,11 @@
 local data = require('data.min')
 local sprite = require('sprite.min')
 
--- Phone to Frame flags
-USER_SPRITE = 0x20
+-- Phone to Frame msg codes
+USER_SPRITE_MSG = 0x20
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[USER_SPRITE] = sprite.parse_sprite
+data.parsers[USER_SPRITE_MSG] = sprite.parse_sprite
 
 -- Main app loop
 function app_loop()
@@ -24,8 +24,8 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if data.app_data[USER_SPRITE] ~= nil then
-						local spr = data.app_data[USER_SPRITE]
+					if data.app_data[USER_SPRITE_MSG] ~= nil then
+						local spr = data.app_data[USER_SPRITE_MSG]
 
 						-- set the palette in case it's different to the standard palette
 						sprite.set_palette(spr.num_colors, spr.palette_data)
@@ -35,7 +35,7 @@ function app_loop()
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
-						data.app_data[USER_SPRITE] = nil
+						data.app_data[USER_SPRITE_MSG] = nil
 						collectgarbage('collect')
 					end
 

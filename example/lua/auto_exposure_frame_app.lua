@@ -2,7 +2,7 @@ local data = require('data.min')
 local camera = require('camera.min')
 local code = require('code.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 CAPTURE_SETTINGS_MSG = 0x0d
 AUTOEXP_SETTINGS_MSG = 0x0e
 AUTOEXP_STEP_MSG = 0x0f

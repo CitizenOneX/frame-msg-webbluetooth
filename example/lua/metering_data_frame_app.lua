@@ -2,7 +2,7 @@ local data = require('data.min')
 local camera = require('camera.min')
 local code = require('code.min')
 
--- Phone to Frame flags
+-- Phone to Frame msg codes
 METERING_QUERY_MSG = 0x12
 
 -- register the message parser so it's automatically called when matching data comes in

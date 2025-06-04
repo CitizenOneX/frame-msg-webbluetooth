@@ -1,11 +1,11 @@
 local data = require('data.min')
 local text_sprite_block = require('text_sprite_block.min')
 
--- Phone to Frame flags
-TEXT_SPRITE_BLOCK = 0x20
+-- Phone to Frame msg codes
+TEXT_SPRITE_BLOCK_MSG = 0x20
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[TEXT_SPRITE_BLOCK] = text_sprite_block.parse_text_sprite_block
+data.parsers[TEXT_SPRITE_BLOCK_MSG] = text_sprite_block.parse_text_sprite_block
 
 
 -- Main app loop
@@ -25,21 +25,15 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if (data.app_data[TEXT_SPRITE_BLOCK] ~= nil) then
+					if (data.app_data[TEXT_SPRITE_BLOCK_MSG] ~= nil) then
 						-- show the text sprite block
-						local tsb = data.app_data[TEXT_SPRITE_BLOCK]
+						local tsb = data.app_data[TEXT_SPRITE_BLOCK_MSG]
 
 						-- it can be that we haven't got any sprites yet, so only proceed if we have a sprite
 						if tsb.first_sprite_index > 0 then
 							-- either we have all the sprites, or we want to do progressive/incremental rendering
 							if tsb.progressive_render or (tsb.active_sprites == tsb.total_sprites) then
 
-								-- for index = 1, tsb.active_sprites do
-								-- 		local spr = tsb.sprites[index]
-								-- 		local y_offset = 50 * (index - 1) -- TODO get proper offsets
-
-								-- 		frame.display.bitmap(1, y_offset + 1, spr.width, 2^spr.bpp, 0, spr.pixel_data)
-								-- end
 								for index, spr in ipairs(tsb.sprites) do
 									frame.display.bitmap(1, tsb.offsets[index].y + 1, spr.width, 2^spr.bpp, 0+index, spr.pixel_data)
 								end

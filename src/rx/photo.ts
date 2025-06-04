@@ -10,13 +10,13 @@ export type JpegQuality = 'VERY_LOW' | 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
  * Configuration options for the RxPhoto class.
  */
 export interface RxPhotoOptions {
-    /** Optional flag indicating a non-final photo data chunk. Defaults to 0x07. */
-    nonFinalChunkFlag?: number;
-    /** Optional flag indicating the final photo data chunk. Defaults to 0x08. */
-    finalChunkFlag?: number;
-    /** Optional flag to rotate the image to be upright. Defaults to true. */
+    /** Optional msgCode indicating a non-final photo data chunk. Defaults to 0x07. */
+    nonFinalChunkMsgCode?: number;
+    /** Optional msgCode indicating the final photo data chunk. Defaults to 0x08. */
+    finalChunkMsgCode?: number;
+    /** Optional msgCode to rotate the image to be upright. Defaults to true. */
     upright?: boolean;
-    /** Optional flag indicating if the photo data is raw (headerless JPEG). Defaults to false. */
+    /** Optional msgCode indicating if the photo data is raw (headerless JPEG). Defaults to false. */
     isRaw?: boolean;
     /** Optional JPEG quality setting. Required for raw images if header is not cached. */
     quality?: JpegQuality | null;
@@ -34,8 +34,8 @@ export interface RxPhotoOptions {
 export class RxPhoto {
     private static _jpegHeaderMap: Record<string, Uint8Array> = {};
 
-    private nonFinalChunkFlag: number;
-    private finalChunkFlag: number;
+    private nonFinalChunkMsgCode: number;
+    private finalChunkMsgCode: number;
     private upright: boolean;
     private isRaw: boolean;
     private quality: JpegQuality | null;
@@ -50,8 +50,8 @@ export class RxPhoto {
      * @param options Configuration options for the photo handler.
      */
     constructor(options: RxPhotoOptions = {}) {
-        this.nonFinalChunkFlag = options.nonFinalChunkFlag ?? 0x07;
-        this.finalChunkFlag = options.finalChunkFlag ?? 0x08;
+        this.nonFinalChunkMsgCode = options.nonFinalChunkMsgCode ?? 0x07;
+        this.finalChunkMsgCode = options.finalChunkMsgCode ?? 0x08;
         this.upright = options.upright ?? true;
         this.isRaw = options.isRaw ?? false;
         this.quality = options.quality ?? null;
@@ -90,7 +90,7 @@ export class RxPhoto {
      * This method is typically called by a `FrameMsg` instance when new photo data is received.
      * It accumulates chunks and, upon receiving the final chunk, processes the complete image.
      * The processed image (as a Uint8Array) is then placed onto the `queue`.
-     * @param data A Uint8Array containing the raw photo data chunk, prefixed with a flag byte.
+     * @param data A Uint8Array containing the raw photo data chunk, prefixed with a msgCode byte.
      */
     public handleData(data: Uint8Array): void {
         if (!this.queue) {
@@ -98,12 +98,12 @@ export class RxPhoto {
             return;
         }
 
-        const flag = data[0];
+        const msgCode = data[0];
         const chunk = data.slice(1);
 
         this._imageDataChunks.push(chunk);
 
-        if (flag === this.finalChunkFlag) {
+        if (msgCode === this.finalChunkMsgCode) {
             // Process complete image asynchronously
             this._processCompleteImage().catch(error => {
                 console.error("RxPhoto: Error processing complete image:", error);
@@ -181,7 +181,7 @@ export class RxPhoto {
 
         frame.registerDataResponseHandler(
             this,
-            [this.nonFinalChunkFlag, this.finalChunkFlag],
+            [this.nonFinalChunkMsgCode, this.finalChunkMsgCode],
             this.handleData.bind(this)
         );
 

@@ -3,15 +3,15 @@ local sprite = require('sprite.min')
 local code = require('code.min')
 local sprite_coords = require('sprite_coords.min')
 
--- Phone to Frame flags
-SPRITE_0 = 0x20
-SPRITE_COORDS = 0x40
-CODE_DRAW = 0x50
+-- Phone to Frame msg codes
+SPRITE_0_MSG = 0x20
+SPRITE_COORDS_MSG = 0x40
+CODE_DRAW_MSG = 0x50
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[SPRITE_0] = sprite.parse_sprite
-data.parsers[SPRITE_COORDS] = sprite_coords.parse_sprite_coords
-data.parsers[CODE_DRAW] = code.parse_code
+data.parsers[SPRITE_0_MSG] = sprite.parse_sprite
+data.parsers[SPRITE_COORDS_MSG] = sprite_coords.parse_sprite_coords
+data.parsers[CODE_DRAW_MSG] = code.parse_code
 
 -- Main app loop
 function app_loop()
@@ -32,8 +32,8 @@ function app_loop()
 
 					-- sprite resource saved for later drawing
 					-- also updates Frame's palette to match the sprite
-					if data.app_data[SPRITE_0] ~= nil then
-						local spr = data.app_data[SPRITE_0]
+					if data.app_data[SPRITE_0_MSG] ~= nil then
+						local spr = data.app_data[SPRITE_0_MSG]
 
 						-- set Frame's palette to match the sprite in case it's different to the standard palette
 						sprite.set_palette(spr.num_colors, spr.palette_data)
@@ -42,8 +42,8 @@ function app_loop()
 					end
 
 					-- place a sprite on the display (backbuffer)
-					if data.app_data[SPRITE_COORDS] ~= nil then
-						local coords = data.app_data[SPRITE_COORDS]
+					if data.app_data[SPRITE_COORDS_MSG] ~= nil then
+						local coords = data.app_data[SPRITE_COORDS_MSG]
 						local spr = data.app_data[coords.code]
 
 						if spr ~= nil then
@@ -52,13 +52,13 @@ function app_loop()
 							print('Sprite not found: ' .. tostring(coords.code))
 						end
 
-						data.app_data[SPRITE_COORDS] = nil
+						data.app_data[SPRITE_COORDS_MSG] = nil
 					end
 
 
 					-- flip the buffers, show what we've drawn
-					if data.app_data[CODE_DRAW] ~= nil then
-						data.app_data[CODE_DRAW] = nil
+					if data.app_data[CODE_DRAW_MSG] ~= nil then
+						data.app_data[CODE_DRAW_MSG] = nil
 
 						frame.display.show()
 					end

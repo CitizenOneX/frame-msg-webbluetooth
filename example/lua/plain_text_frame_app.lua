@@ -1,11 +1,11 @@
 local data = require('data.min')
 local plain_text = require('plain_text.min')
 
--- Phone to Frame flags
-TEXT_FLAG = 0x0a
+-- Phone to Frame msg codes
+TEXT_MSG = 0x0a
 
 -- register the message parsers so they are automatically called when matching data comes in
-data.parsers[TEXT_FLAG] = plain_text.parse_plain_text
+data.parsers[TEXT_MSG] = plain_text.parse_plain_text
 
 -- draw the specified text on the display
 function print_text(text)
@@ -35,13 +35,13 @@ function app_loop()
 				-- one or more full messages received
 				if items_ready > 0 then
 
-					if data.app_data[TEXT_FLAG] ~= nil and data.app_data[TEXT_FLAG].string ~= nil then
-						local text = data.app_data[TEXT_FLAG]
+					if data.app_data[TEXT_MSG] ~= nil and data.app_data[TEXT_MSG].string ~= nil then
+						local text = data.app_data[TEXT_MSG]
 						print_text(text)
 						frame.display.show()
 
 						-- clear the object and run the garbage collector right away
-						data.app_data[TEXT_FLAG] = nil
+						data.app_data[TEXT_MSG] = nil
 						collectgarbage('collect')
 					end
 

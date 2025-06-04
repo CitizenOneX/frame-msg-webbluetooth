@@ -1,6 +1,13 @@
 import { FrameMsg, StdLua, TxCode, RxTap } from 'frame-msg';
 import frameApp from './lua/multi_tap_frame_app.lua?raw';
 
+/**
+ * Demonstrates detecting and counting multi-tap events from a Frame device.
+ * This example involves:
+ * - Sending `TxCode` messages to the Frame device to subscribe to and later unsubscribe from tap events.
+ * - Using `RxTap` to receive and process tap events, which counts consecutive taps within a defined threshold.
+ * - Logging the detected tap counts to the console (e.g., "2-tap received", "3-tap received").
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -35,11 +42,11 @@ export async function run() {
     await frame.startFrameApp();
 
     // hook up the RxTap receiver
-    var rxTap = new RxTap();
+    var rxTap = new RxTap({});
     var tapQueue = await rxTap.attach(frame);
 
     // Subscribe for tap events
-    await frame.sendMessage(0x10, new TxCode(1).pack());
+    await frame.sendMessage(0x10, new TxCode({ value: 1 }).pack());
 
     // iterate 10 times
     for (let i = 0; i < 10; i++) {
@@ -49,7 +56,7 @@ export async function run() {
     }
 
     // unsubscribe from tap events
-    await frame.sendMessage(0x10, new TxCode(0).pack());
+    await frame.sendMessage(0x10, new TxCode({ value: 0 }).pack());
 
     // stop the tap listener and clean up its resources
     rxTap.detach(frame);

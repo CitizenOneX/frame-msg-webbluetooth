@@ -1,7 +1,15 @@
 import { FrameMsg, StdLua, TxCode, RxIMU } from 'frame-msg';
 import frameApp from './lua/imu_stream_frame_app.lua?raw';
 
-// Stream IMU updates from Frame and print them to the console
+/**
+ * Demonstrates streaming Inertial Measurement Unit (IMU) data from a Frame device.
+ * This example involves:
+ * - Sending `TxCode` messages to start and stop the IMU data stream on the Frame device.
+ * - Using `RxIMU` to receive IMU data, which includes compass and accelerometer readings.
+ * - Calculating pitch and roll from the accelerometer data.
+ * - Displaying the raw compass, accelerometer, and calculated pitch/roll values on the webpage.
+ * - Printing the received IMU data objects to the console.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -41,7 +49,7 @@ export async function run() {
 
     // Start the IMU updates
     console.log("Starting IMU stream...");
-    await frame.sendMessage(0x40, new TxCode(1).pack());
+    await frame.sendMessage(0x40, new TxCode({ value: 1 }).pack());
 
     // find the element to display the IMU data
     const imuDataDiv = document.getElementById('text1');
@@ -70,7 +78,7 @@ export async function run() {
     }
 
     console.log("Stopping IMU stream...");
-    await frame.sendMessage(0x40, new TxCode(0).pack());
+    await frame.sendMessage(0x40, new TxCode({ value: 0 }).pack());
 
     // stop the listener and clean up its resources
     rxIMU.detach(frame);

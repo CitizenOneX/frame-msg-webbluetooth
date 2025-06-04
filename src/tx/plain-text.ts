@@ -1,21 +1,40 @@
 /**
+ * Options for configuring a plain text message.
+ */
+export interface TxPlainTextOptions {
+    /** The plain text content to be transmitted. */
+    text: string;
+    /** Optional X-coordinate for text position (1-640, Lua/1-based indexing). Defaults to 1. */
+    x?: number;
+    /** Optional Y-coordinate for text position (1-400, Lua/1-based indexing). Defaults to 1. */
+    y?: number;
+    /** Optional color palette offset (1-15, 0/'VOID' is invalid). Defaults to 1. */
+    paletteOffset?: number;
+    /** Optional character spacing value. Defaults to 4. */
+    spacing?: number;
+}
+
+/**
  * A message containing plain text with positioning and formatting information.
  */
 export class TxPlainText {
+    public text: string;
+    public x: number;
+    public y: number;
+    public paletteOffset: number;
+    public spacing: number;
+
     /**
-     * @param text The plain text content to be transmitted
-     * @param x X-coordinate for text position (1-640, Lua/1-based indexing)
-     * @param y Y-coordinate for text position (1-400, Lua/1-based indexing)
-     * @param paletteOffset Color palette offset (1-15, 0/'VOID' is invalid)
-     * @param spacing Character spacing value
+     * Constructs an instance of TxPlainText.
+     * @param options Configuration options for the plain text message.
      */
-    constructor(
-        public text: string,
-        public x: number = 1,
-        public y: number = 1,
-        public paletteOffset: number = 1,
-        public spacing: number = 4
-    ) {}
+    constructor(options: TxPlainTextOptions) {
+        this.text = options.text;
+        this.x = options.x ?? 1;
+        this.y = options.y ?? 1;
+        this.paletteOffset = options.paletteOffset ?? 1;
+        this.spacing = options.spacing ?? 4;
+    }
 
     /**
      * Packs the message into a binary format.

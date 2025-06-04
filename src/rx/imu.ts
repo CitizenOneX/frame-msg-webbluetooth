@@ -49,28 +49,43 @@ class SensorBuffer {
  * Interface for raw IMU data.
  */
 export interface IMURawData {
+    /** Raw compass data as a tuple: `[x, y, z]`. */
     compass: [number, number, number];
+    /** Raw accelerometer data as a tuple: `[x, y, z]`. */
     accel: [number, number, number];
 }
 
 /**
  * Class for processed IMU data.
+ * Contains smoothed compass and accelerometer data, and optionally the raw data.
+ * Also provides calculated pitch and roll values.
  */
 export class IMUData {
+    /** Smoothed compass data as a tuple: `[x, y, z]`. */
     public compass: [number, number, number];
+    /** Smoothed accelerometer data as a tuple: `[x, y, z]`. */
     public accel: [number, number, number];
+    /** Optional raw IMU data. */
     public raw?: IMURawData;
 
+    /**
+     * Constructs an instance of IMUData.
+     * @param compass Smoothed compass data `[x, y, z]`.
+     * @param accel Smoothed accelerometer data `[x, y, z]`.
+     * @param raw Optional raw IMU data.
+     */
     constructor(compass: [number, number, number], accel: [number, number, number], raw?: IMURawData) {
         this.compass = compass;
         this.accel = accel;
         this.raw = raw;
     }
 
+    /** Calculated pitch in degrees. */
     public get pitch(): number {
         return Math.atan2(this.accel[1], this.accel[2]) * 180.0 / Math.PI;
     }
 
+    /** Calculated roll in degrees. */
     public get roll(): number {
         return Math.atan2(this.accel[0], this.accel[2]) * 180.0 / Math.PI;
     }
@@ -80,7 +95,9 @@ export class IMUData {
  * Options for RxIMU constructor.
  */
 export interface RxIMUOptions {
+    /** Optional flag to identify IMU data packets. Defaults to 0x0A. */
     imuFlag?: number;
+    /** Optional number of samples to average for smoothing. Defaults to 1 (no smoothing). */
     smoothingSamples?: number;
 }
 
@@ -92,10 +109,15 @@ export class RxIMU {
     private imuFlag: number;
     private smoothingSamples: number;
 
+    /** Asynchronous queue for received IMUData objects. Null if not attached. */
     public queue: AsyncQueue<IMUData | null> | null;
     private compassBuffer: SensorBuffer;
     private accelBuffer: SensorBuffer;
 
+    /**
+     * Constructs an instance of the RxIMU class.
+     * @param options Configuration options for the IMU handler.
+     */
     constructor(options: RxIMUOptions = {}) {
         this.imuFlag = options.imuFlag ?? 0x0A; //
         this.smoothingSamples = options.smoothingSamples ?? 1; //

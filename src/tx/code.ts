@@ -1,14 +1,25 @@
 /**
+ * Options for configuring a TxCode message.
+ */
+export interface TxCodeOptions {
+    /** Optional byte value to be transmitted (0-255). Defaults to 0. */
+    value?: number;
+}
+
+/**
  * A simple message containing only a message code and an optional byte value.
  * Used for signaling the frameside app to take some action.
  */
 export class TxCode {
+    public value: number;
+
     /**
-     * @param value The byte value to be transmitted (0-255)
+     * Constructs an instance of TxCode.
+     * @param options Configuration options for the code message.
      */
-    constructor(
-        public value: number = 0
-    ) {}
+    constructor(options: TxCodeOptions = {}) {
+        this.value = options.value ?? 0;
+    }
 
     /**
      * Packs the message into a single byte.

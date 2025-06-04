@@ -1,6 +1,25 @@
 import { TxSprite } from './sprite';
 
 /**
+ * Options for configuring an image sprite block.
+ */
+export interface TxImageSpriteBlockOptions {
+    /** The source {@link TxSprite} to be split into strips. */
+    image: TxSprite;
+    /**
+     * Optional height of each sprite strip. Defaults to 16.
+     * If the source `image` is compressed (`image.compress` is true),
+     * this value is dynamically calculated to respect a 4kB packed size limit per strip
+     * and any provided value here is ignored.
+     */
+    spriteLineHeight?: number;
+    /** Optional flag whether to render lines as they arrive. Defaults to true. */
+    progressiveRender?: boolean;
+    /** Optional flag whether lines can be updated after initial render. Defaults to true. */
+    updatable?: boolean;
+}
+
+/**
  * An image split into horizontal sprite strips.
  */
 export class TxImageSpriteBlock {
@@ -9,7 +28,7 @@ export class TxImageSpriteBlock {
      */
     public image: TxSprite;
     /**
-     * Height of each sprite strip. If the TxSprite is compressed, the strip has a packed size limit of 4kB and this value is ignored.
+     * Height of each sprite strip. If the TxSprite is compressed, the strip has a packed size limit of 4kB and this value is dynamically calculated.
      */
     public spriteLineHeight: number;
     /**
@@ -26,40 +45,32 @@ export class TxImageSpriteBlock {
     public spriteLines: TxSprite[] = [];
 
     /**
-     * @param image Source sprite to split
-     * @param spriteLineHeight Height of each sprite strip. Default is 16.
-     * @param progressiveRender Whether to render lines as they arrive. Default is true.
-     * @param updatable Whether lines can be updated after initial render. Default is true.
+     * Constructs an instance of TxImageSpriteBlock.
+     * @param options Configuration options for the image sprite block.
      */
-    constructor(
-        image: TxSprite,
-        spriteLineHeight: number = 16,
-        progressiveRender: boolean = true,
-        updatable: boolean = true
-    ) {
-        this.image = image;
-        this.progressiveRender = progressiveRender;
-        this.updatable = updatable;
+    constructor(options: TxImageSpriteBlockOptions) {
+        this.image = options.image;
+        this.progressiveRender = options.progressiveRender ?? true;
+        this.updatable = options.updatable ?? true;
 
-        if (image.compress) {
+        if (this.image.compress) {
             // 4k uncompressed (binary packed) limit
-            const currentBpp = image.bpp; // Using the bpp getter from your TxSprite class
+            const currentBpp = this.image.bpp; // Using the bpp getter from your TxSprite class
             // Ensure bpp is not zero to avoid division by zero
-            const packedBytesPerRow = currentBpp > 0 ? Math.floor((image.width + (8 / currentBpp) - 1) / (8 / currentBpp)) : 0;
+            const packedBytesPerRow = currentBpp > 0 ? Math.floor((this.image.width + (8 / currentBpp) - 1) / (8 / currentBpp)) : 0;
             this.spriteLineHeight = packedBytesPerRow > 0 ? Math.floor(4096 / packedBytesPerRow) : 0;
              if (this.spriteLineHeight === 0 && packedBytesPerRow > 0) { // Ensure at least 1 line if possible
                 this.spriteLineHeight = 1;
             } else if (packedBytesPerRow === 0) { // Handle case where image width or bpp results in zero bytes per row
-                this.spriteLineHeight = image.height; // Or some other sensible default, maybe error?
+                this.spriteLineHeight = this.image.height; // Or some other sensible default, maybe error?
             }
         } else {
-            this.spriteLineHeight = spriteLineHeight;
+            this.spriteLineHeight = options.spriteLineHeight ?? 16;
         }
          // Ensure spriteLineHeight is at least 1 if image has height
         if (this.image.height > 0 && this.spriteLineHeight < 1) {
             this.spriteLineHeight = 1;
         }
-
 
         this._splitIntoLines();
     }
@@ -80,14 +91,14 @@ export class TxImageSpriteBlock {
              console.warn("TxImageSpriteBlock: spriteLineHeight is zero or negative, cannot split lines.");
              // Optionally, create a single sprite line with the whole image or handle as an error
             if (this.image.height > 0) {
-                 this.spriteLines.push(new TxSprite(
-                    this.image.width,
-                    this.image.height,
-                    this.image.numColors,
-                    this.image.paletteData, // Share palette data
-                    sourcePixelData,        // Use the whole pixel data
-                    this.image.compress
-                ));
+                 this.spriteLines.push(new TxSprite({
+                    width: this.image.width,
+                    height: this.image.height,
+                    numColors: this.image.numColors,
+                    paletteData: this.image.paletteData, // Share palette data
+                    pixelData: sourcePixelData,        // Use the whole pixel data
+                    compress: this.image.compress
+                }));
             }
             return;
         }
@@ -100,14 +111,14 @@ export class TxImageSpriteBlock {
             const endYOffset = startYOffset + this.spriteLineHeight * pixelsPerRow;
             const linePixelData = sourcePixelData.slice(startYOffset, endYOffset);
 
-            this.spriteLines.push(new TxSprite(
-                this.image.width,
-                this.spriteLineHeight,
-                this.image.numColors,
-                this.image.paletteData, // Share palette data
-                linePixelData,
-                this.image.compress
-            ));
+            this.spriteLines.push(new TxSprite({
+                width: this.image.width,
+                height: this.spriteLineHeight,
+                numColors: this.image.numColors,
+                paletteData: this.image.paletteData, // Share palette data
+                pixelData: linePixelData,
+                compress: this.image.compress
+            }));
         }
 
         // Process final partial line if any
@@ -117,14 +128,14 @@ export class TxImageSpriteBlock {
             // No endYOffset needed for slice if it's the rest of the array
             const finalLinePixelData = sourcePixelData.slice(startYOffset);
 
-            this.spriteLines.push(new TxSprite(
-                this.image.width,
-                remainingHeight,
-                this.image.numColors,
-                this.image.paletteData, // Share palette data
-                finalLinePixelData,
-                this.image.compress
-            ));
+            this.spriteLines.push(new TxSprite({
+                width: this.image.width,
+                height: remainingHeight,
+                numColors: this.image.numColors,
+                paletteData: this.image.paletteData, // Share palette data
+                pixelData: finalLinePixelData,
+                compress: this.image.compress
+            }));
         }
     }
 

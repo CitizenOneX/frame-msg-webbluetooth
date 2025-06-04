@@ -3,15 +3,25 @@ import { AsyncQueue } from '../async-queue';
 
 import jpeg from 'jpeg-js';
 
+/** Defines the available JPEG quality settings. */
 export type JpegQuality = 'VERY_LOW' | 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
 
+/**
+ * Configuration options for the RxPhoto class.
+ */
 export interface RxPhotoOptions {
+    /** Optional flag indicating a non-final photo data chunk. Defaults to 0x07. */
     nonFinalChunkFlag?: number;
+    /** Optional flag indicating the final photo data chunk. Defaults to 0x08. */
     finalChunkFlag?: number;
+    /** Optional flag to rotate the image to be upright. Defaults to true. */
     upright?: boolean;
+    /** Optional flag indicating if the photo data is raw (headerless JPEG). Defaults to false. */
     isRaw?: boolean;
+    /** Optional JPEG quality setting. Required for raw images if header is not cached. */
     quality?: JpegQuality | null;
-    resolution?: number | null; // even number between 100 and 720 inclusive
+    /** Optional photo resolution (e.g., height in pixels). Must be an even number between 100 and 720. Required for raw images if header is not cached. */
+    resolution?: number | null;
 }
 
 /**
@@ -31,9 +41,14 @@ export class RxPhoto {
     private quality: JpegQuality | null;
     private resolution: number | null;
 
+    /** Asynchronous queue for received photo data (Uint8Array). Null if not attached. */
     public queue: AsyncQueue<Uint8Array> | null;
     private _imageDataChunks: Uint8Array[];
 
+    /**
+     * Constructs an instance of the RxPhoto class.
+     * @param options Configuration options for the photo handler.
+     */
     constructor(options: RxPhotoOptions = {}) {
         this.nonFinalChunkFlag = options.nonFinalChunkFlag ?? 0x07;
         this.finalChunkFlag = options.finalChunkFlag ?? 0x08;
@@ -46,6 +61,12 @@ export class RxPhoto {
         this._imageDataChunks = [];
     }
 
+    /**
+     * Checks if a JPEG header is cached for the given quality and resolution.
+     * @param quality The JPEG quality.
+     * @param resolution The photo resolution.
+     * @returns True if a header is cached, false otherwise.
+     */
     public static hasJpegHeader(quality: JpegQuality, resolution: number): boolean {
         return `${quality}_${resolution}` in RxPhoto._jpegHeaderMap;
     }
@@ -64,6 +85,13 @@ export class RxPhoto {
         return result;
     }
 
+    /**
+     * Handles incoming raw photo data chunks.
+     * This method is typically called by a `FrameMsg` instance when new photo data is received.
+     * It accumulates chunks and, upon receiving the final chunk, processes the complete image.
+     * The processed image (as a Uint8Array) is then placed onto the `queue`.
+     * @param data A Uint8Array containing the raw photo data chunk, prefixed with a flag byte.
+     */
     public handleData(data: Uint8Array): void {
         if (!this.queue) {
             console.warn("RxPhoto: Received data but queue not initialized - call attach() first");
@@ -130,6 +158,12 @@ export class RxPhoto {
         }
     }
 
+    /**
+     * Attaches this RxPhoto instance to a FrameMsg object to receive photo data.
+     * It initializes the photo data queue and registers a handler for incoming data chunks.
+     * @param frame The FrameMsg instance to attach to.
+     * @returns A Promise that resolves to the `AsyncQueue` where complete photo data (Uint8Array) will be placed.
+     */
     public async attach(frame: FrameMsg): Promise<AsyncQueue<Uint8Array>> {
         if (this.isRaw && (!this.quality || !this.resolution)) {
             // Check if a header is already cached for this configuration. If not, it's an issue.
@@ -154,6 +188,11 @@ export class RxPhoto {
         return this.queue;
     }
 
+    /**
+     * Detaches this RxPhoto instance from a FrameMsg object.
+     * It unregisters the data handler and clears the photo data queue and any pending chunks.
+     * @param frame The FrameMsg instance to detach from.
+     */
     public detach(frame: FrameMsg): void {
         frame.unregisterDataResponseHandler(this);
         if (this.queue) {

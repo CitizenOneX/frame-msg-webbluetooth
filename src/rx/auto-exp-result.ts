@@ -5,9 +5,13 @@ import { AsyncQueue } from '../async-queue';
  * Interface for the detailed brightness metrics (matrix or spot).
  */
 export interface BrightnessDetails {
+    /** Red channel brightness component. */
     r: number;
+    /** Green channel brightness component. */
     g: number;
+    /** Blue channel brightness component. */
     b: number;
+    /** Average brightness across R, G, B channels. */
     average: number;
 }
 
@@ -15,9 +19,13 @@ export interface BrightnessDetails {
  * Interface for the overall brightness data structure.
  */
 export interface BrightnessData {
+    /** Center-weighted average brightness of the scene. */
     center_weighted_average: number;
+    /** Overall scene brightness. */
     scene: number;
+    /** Detailed brightness metrics using matrix metering. */
     matrix: BrightnessDetails;
+    /** Detailed brightness metrics using spot metering. */
     spot: BrightnessDetails;
 }
 
@@ -25,12 +33,19 @@ export interface BrightnessData {
  * Interface for the structured auto exposure result data.
  */
 export interface AutoExpResultData {
+    /** The error value from the auto exposure algorithm. */
     error: number;
+    /** The calculated shutter speed (exposure time). */
     shutter: number;
+    /** The calculated analog gain. */
     analog_gain: number;
+    /** The red channel gain. */
     red_gain: number;
+    /** The green channel gain. */
     green_gain: number;
+    /** The blue channel gain. */
     blue_gain: number;
+    /** Detailed brightness data used for auto exposure. */
     brightness: BrightnessData;
 }
 
@@ -38,6 +53,7 @@ export interface AutoExpResultData {
  * Options for RxAutoExpResult constructor.
  */
 export interface RxAutoExpResultOptions {
+    /** Optional message code to identify auto exposure result packets. Defaults to 0x11. */
     msgCode?: number;
 }
 
@@ -46,6 +62,7 @@ export interface RxAutoExpResultOptions {
  */
 export class RxAutoExpResult {
     private msgCode: number;
+    /** Asynchronous queue for received auto exposure result data. Null if not attached. */
     public queue: AsyncQueue<AutoExpResultData | null> | null;
 
     /**

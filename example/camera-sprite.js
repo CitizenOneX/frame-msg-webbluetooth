@@ -17,7 +17,16 @@ function displayImage(imageBytes, mimeType, divId) {
   }
 }
 
-// Take a photo using the Frame camera, send it to the host, and send it back as a sprite (TxImageSpriteBlock) to the Frame display
+/**
+ * Demonstrates a round-trip image manipulation workflow with a Frame device.
+ * This example involves:
+ * 1. Capturing a photo from the Frame camera using `TxCaptureSettings` to initiate and `RxPhoto` to receive the image data.
+ * 2. Displaying this original photo on the webpage.
+ * 3. Converting the received JPEG photo into a `TxSprite` using `TxSprite.fromImageBytes`, which involves resizing and color quantization.
+ * 4. Displaying the generated sprite (as a PNG) on the webpage for comparison.
+ * 5. Creating a `TxImageSpriteBlock` from this `TxSprite`, which splits the sprite into smaller, transmittable lines.
+ * 6. Sending this `TxImageSpriteBlock` (header first, then each sprite line) back to the Frame device for display on its screen.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -61,7 +70,7 @@ export async function run() {
     console.log("Taking photo...");
 
     // Request the photo by sending a TxCaptureSettings message
-    await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+    await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
     // get the jpeg bytes as soon as they're ready
     const jpegBytes = await photoQueue.get();
@@ -77,7 +86,7 @@ export async function run() {
     // display the sprite on the web page
     displayImage(sprite.toPngBytes(), 'image/png', 'image2');
 
-    const isb = new TxImageSpriteBlock(sprite, 20);
+    const isb = new TxImageSpriteBlock({ image: sprite, spriteLineHeight: 20 });
     // send the Image Sprite Block header
     await frame.sendMessage(0x20, isb.pack());
 

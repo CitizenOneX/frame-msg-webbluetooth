@@ -111,7 +111,7 @@ async function runPhotoProcessing(frame, photoQueue, getKeepRunning, photoInterv
         if (!getKeepRunning() || !frame.isConnected()) return false;
 
         console.log("Requesting photo...");
-        const captureSettings = new TxCaptureSettings();
+        const captureSettings = new TxCaptureSettings({});
         try {
             await frame.sendMessage(0x0d, captureSettings.pack());
             lastPhotoRequestTimeMs = Date.now();
@@ -211,6 +211,16 @@ async function runPhotoProcessing(frame, photoQueue, getKeepRunning, photoInterv
 // --- Main application ---
 let imageDisplayElement = null; // Single image element for display
 
+/**
+ * Demonstrates simultaneously streaming audio and periodically capturing photos from a Frame device.
+ * This example utilizes:
+ * - `RxAudio` for receiving and processing streaming audio data.
+ * - `RxPhoto` for capturing and receiving photo data.
+ * - The Web Audio API with a custom `AudioWorkletProcessor` for real-time audio playback.
+ * - Dynamic HTML image element updates to display the latest captured photo.
+ * It also includes robust handling for starting, stopping, and cleaning up resources
+ * for both audio and photo streams, including device connection and application lifecycle.
+ */
 export async function run() {
     const frame = new FrameMsg();
     let audioContext;
@@ -275,7 +285,7 @@ export async function run() {
         };
 
         console.log("Requesting Frame to start audio stream...");
-        await frame.sendMessage(0x30, new TxCode(1).pack());
+        await frame.sendMessage(0x30, new TxCode({ value: 1 }).pack());
 
         // Start asynchronous processing loops
         const audioProcessingPromise = runAudioProcessing(frame, audioQueue, pcmPlayerNode, getKeepRunning, signalShutdown, rxAudio);
@@ -299,7 +309,7 @@ export async function run() {
         await new Promise(resolve => setTimeout(resolve, 20000));
 
         console.log("Requesting Frame to stop audio stream...");
-        await frame.sendMessage(0x30, new TxCode(0).pack());
+        await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack());
 
         await shutdownPromise; // Wait until shutdown is signaled
 
@@ -327,7 +337,7 @@ export async function run() {
         if (frame && frame.isConnected()) {
             try {
                 console.log("Requesting Frame to stop audio stream...");
-                await frame.sendMessage(0x30, new TxCode(0).pack());
+                await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack());
             } catch (e) {
                 console.error("Error sending stop audio command to Frame:", e);
             }

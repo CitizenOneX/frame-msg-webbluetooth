@@ -1,7 +1,13 @@
 import { FrameMsg, StdLua, TxCode } from 'frame-msg';
 import frameApp from './lua/code_value_frame_app.lua?raw';
 
-// Send a tiny TxCode message to Frame with a single-byte value as a control message
+/**
+ * Demonstrates sending a sequence of `TxCode` messages to a Frame device.
+ * Each `TxCode` message carries a single-byte value, which is iteratively updated.
+ * The corresponding Frame Lua application (`code_value_frame_app.lua`) is expected
+ * to receive these messages and print the contained value to its standard output.
+ * This example showcases a basic control message pattern.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -37,7 +43,7 @@ export async function run() {
 
     // iterate 10 times and sleep for 1 second between each iteration
     for (let i = 1; i <= 10; i++) {
-      await frame.sendMessage(0x42, new TxCode(i).pack());
+      await frame.sendMessage(0x42, new TxCode({ value: i }).pack());
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 

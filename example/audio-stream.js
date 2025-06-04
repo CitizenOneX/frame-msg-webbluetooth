@@ -57,6 +57,13 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
 registerProcessor('pcm-player-processor', PCMPlayerProcessor);
 `;
 
+/**
+ * Demonstrates streaming audio data from a Frame device and playing it in real-time.
+ * This example uses the RxAudio class in streaming mode to receive audio chunks
+ * (either 8-bit or 16-bit PCM). These chunks are then converted to Float32Array
+ * and sent to a custom AudioWorkletProcessor for playback via the Web Audio API.
+ * The stream runs for a fixed duration before automatically stopping and cleaning up.
+ */
 export async function run() {
     const frame = new FrameMsg();
     let audioContext;
@@ -105,7 +112,7 @@ export async function run() {
 
         // 3. Tell Frame to start sending audio data
         console.log("Requesting Frame to start audio stream...");
-        await frame.sendMessage(0x30, new TxCode(1).pack()); // Start audio command
+        await frame.sendMessage(0x30, new TxCode({ value: 1 }).pack()); // Start audio command
 
         console.log("Audio streaming started. Listening for data...");
 
@@ -155,7 +162,7 @@ export async function run() {
         if (frame.isConnected()) {
             try {
                 console.log("Requesting Frame to stop audio stream...");
-                await frame.sendMessage(0x30, new TxCode(0).pack()); // Stop audio command
+                await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack()); // Stop audio command
             } catch (e) {
                 console.error("Error sending stop stream command to Frame:", e);
             }

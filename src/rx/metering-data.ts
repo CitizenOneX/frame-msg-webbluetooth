@@ -5,11 +5,17 @@ import { AsyncQueue } from '../async-queue';
  * Interface for the structured metering data.
  */
 export interface MeteringData {
+    /** Spot metering red channel value. */
     spot_r: number;
+    /** Spot metering green channel value. */
     spot_g: number;
+    /** Spot metering blue channel value. */
     spot_b: number;
+    /** Matrix metering red channel value. */
     matrix_r: number;
+    /** Matrix metering green channel value. */
     matrix_g: number;
+    /** Matrix metering blue channel value. */
     matrix_b: number;
 }
 
@@ -17,6 +23,7 @@ export interface MeteringData {
  * Options for RxMeteringData constructor.
  */
 export interface RxMeteringDataOptions {
+    /** Optional message code to identify metering data packets. Defaults to 0x12. */
     msgCode?: number;
 }
 
@@ -25,8 +32,13 @@ export interface RxMeteringDataOptions {
  */
 export class RxMeteringData {
     private msgCode: number;
+    /** Asynchronous queue for received MeteringData objects. Null if not attached. */
     public queue: AsyncQueue<MeteringData | null> | null;
 
+    /**
+     * Constructs an instance of the RxMeteringData class.
+     * @param options Configuration options for the metering data handler.
+     */
     constructor(options: RxMeteringDataOptions = {}) {
         this.msgCode = options.msgCode ?? 0x12; // Default msg_code from Python
         this.queue = null;

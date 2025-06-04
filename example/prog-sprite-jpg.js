@@ -17,6 +17,20 @@ function displayImage(imageBytes, mimeType, divId) {
   }
 }
 
+/**
+ * Demonstrates fetching a JPG image, converting it to a sprite format,
+ * and sending it to a Frame device for progressive display.
+ * This example involves:
+ * - Fetching a JPG image from a local path.
+ * - Displaying the original JPG image on the webpage.
+ * - Converting the JPG image data into a `TxSprite` object using `TxSprite.fromImageBytes`,
+ *   which includes resizing and color quantization.
+ * - Displaying the generated `TxSprite` (as a PNG) on the webpage for comparison.
+ * - Creating a `TxImageSpriteBlock` from the `TxSprite`, configured for progressive rendering.
+ *   This process splits the sprite into smaller, transmittable lines.
+ * - Sending the `TxImageSpriteBlock` (header first, then each sprite line) to the Frame device,
+ *   allowing the image to be rendered progressively on its screen.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -63,7 +77,7 @@ export async function run() {
     // display the sprite on the web page
     displayImage(sprite.toPngBytes(), 'image/png', 'image2');
 
-    const isb = new TxImageSpriteBlock(sprite, 20);
+    const isb = new TxImageSpriteBlock({ image: sprite, spriteLineHeight: 20 });
     // send the Image Sprite Block header
     await frame.sendMessage(0x20, isb.pack());
 

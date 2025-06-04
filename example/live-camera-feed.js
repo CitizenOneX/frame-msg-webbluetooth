@@ -1,7 +1,14 @@
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/live_camera_feed_frame_app.lua?raw';
 
-// Take a sequence of photos using the Frame camera and display them
+/**
+ * Demonstrates capturing a sequence of photos from the Frame camera and displaying them
+ * on a webpage to create a live feed effect.
+ * This example involves:
+ * - Iteratively requesting photos from the Frame device using `TxCaptureSettings`.
+ * - Receiving the JPEG image data via `RxPhoto`.
+ * - Displaying each newly captured photo in an HTML image element, replacing the previous one.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -53,7 +60,7 @@ export async function run() {
     // loop 20 times - take a photo and display it in the div
     for (let i = 0; i < 20; i++) {
       // Request the photo by sending a TxCaptureSettings message
-      await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+      await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
       // get the jpeg bytes as soon as they're ready
       const jpegBytes = await photoQueue.get();

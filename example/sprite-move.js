@@ -55,8 +55,8 @@ export async function run() {
     // send the sprite coordinates to Frame 20 times with random positions on msgCode 0x40
     // then send a message of type TxCode on msgCode 0x50 to draw the sprite
     for (let i = 0; i < 20; i++) {
-      const x = Math.floor(Math.random() * 441);
-      const y = Math.floor(Math.random() * 201);
+      const x = Math.floor(Math.random() * 441) + 1;
+      const y = Math.floor(Math.random() * 201) + 1;
       const coords = new TxSpriteCoords({ code: 0x20, x: x, y: y, offset: 0 });
       await frame.sendMessage(0x40, coords.pack());
 

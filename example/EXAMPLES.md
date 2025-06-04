@@ -12,8 +12,12 @@ See: https://docs.brilliant.xyz/frame/frame-sdk/
 import { FrameMsg, StdLua, RxAudio, TxCode, RxAudioSampleRate, RxAudioBitDepth } from 'frame-msg';
 import frameApp from './lua/audio_clip_frame_app.lua?raw';
 
-// Record an audio clip using Frame's microphone and play it back
-// This example uses the RxAudio class to receive audio data from Frame
+/**
+ * Demonstrates how to record an audio clip using Frame's microphone and play it back.
+ * This example utilizes the RxAudio class to receive audio data from the Frame device
+ * in non-streaming mode, then converts the raw PCM data to WAV format for playback
+ * using the Web Audio API.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -53,7 +57,7 @@ export async function run() {
 
     // Tell Frame to start streaming audio
     // Assuming 0x30 is the correct message ID and new TxCode(1).pack() is the start command
-    await frame.sendMessage(0x30, new TxCode(1).pack());
+    await frame.sendMessage(0x30, new TxCode({ value: 1 }).pack());
 
     console.log("Recording audio for 10 seconds...");
     await new Promise(resolve => setTimeout(resolve, 10000));
@@ -61,7 +65,7 @@ export async function run() {
     // Stop the audio stream
     console.log("Stopping audio...");
     // Assuming new TxCode(0).pack() is the stop command
-    await frame.sendMessage(0x30, new TxCode(0).pack());
+    await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack());
 
     // Get the raw PCM audio data from RxAudio
     // RxAudio (non-streaming) puts the complete audio data first, then null
@@ -290,6 +294,13 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
 registerProcessor('pcm-player-processor', PCMPlayerProcessor);
 `;
 
+/**
+ * Demonstrates streaming audio data from a Frame device and playing it in real-time.
+ * This example uses the RxAudio class in streaming mode to receive audio chunks
+ * (either 8-bit or 16-bit PCM). These chunks are then converted to Float32Array
+ * and sent to a custom AudioWorkletProcessor for playback via the Web Audio API.
+ * The stream runs for a fixed duration before automatically stopping and cleaning up.
+ */
 export async function run() {
     const frame = new FrameMsg();
     let audioContext;
@@ -338,7 +349,7 @@ export async function run() {
 
         // 3. Tell Frame to start sending audio data
         console.log("Requesting Frame to start audio stream...");
-        await frame.sendMessage(0x30, new TxCode(1).pack()); // Start audio command
+        await frame.sendMessage(0x30, new TxCode({ value: 1 }).pack()); // Start audio command
 
         console.log("Audio streaming started. Listening for data...");
 
@@ -388,7 +399,7 @@ export async function run() {
         if (frame.isConnected()) {
             try {
                 console.log("Requesting Frame to stop audio stream...");
-                await frame.sendMessage(0x30, new TxCode(0).pack()); // Stop audio command
+                await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack()); // Stop audio command
             } catch (e) {
                 console.error("Error sending stop stream command to Frame:", e);
             }
@@ -648,7 +659,7 @@ async function runPhotoProcessing(frame, photoQueue, getKeepRunning, photoInterv
         if (!getKeepRunning() || !frame.isConnected()) return false;
 
         console.log("Requesting photo...");
-        const captureSettings = new TxCaptureSettings();
+        const captureSettings = new TxCaptureSettings({});
         try {
             await frame.sendMessage(0x0d, captureSettings.pack());
             lastPhotoRequestTimeMs = Date.now();
@@ -748,6 +759,16 @@ async function runPhotoProcessing(frame, photoQueue, getKeepRunning, photoInterv
 // --- Main application ---
 let imageDisplayElement = null; // Single image element for display
 
+/**
+ * Demonstrates simultaneously streaming audio and periodically capturing photos from a Frame device.
+ * This example utilizes:
+ * - `RxAudio` for receiving and processing streaming audio data.
+ * - `RxPhoto` for capturing and receiving photo data.
+ * - The Web Audio API with a custom `AudioWorkletProcessor` for real-time audio playback.
+ * - Dynamic HTML image element updates to display the latest captured photo.
+ * It also includes robust handling for starting, stopping, and cleaning up resources
+ * for both audio and photo streams, including device connection and application lifecycle.
+ */
 export async function run() {
     const frame = new FrameMsg();
     let audioContext;
@@ -812,7 +833,7 @@ export async function run() {
         };
 
         console.log("Requesting Frame to start audio stream...");
-        await frame.sendMessage(0x30, new TxCode(1).pack());
+        await frame.sendMessage(0x30, new TxCode({ value: 1 }).pack());
 
         // Start asynchronous processing loops
         const audioProcessingPromise = runAudioProcessing(frame, audioQueue, pcmPlayerNode, getKeepRunning, signalShutdown, rxAudio);
@@ -836,7 +857,7 @@ export async function run() {
         await new Promise(resolve => setTimeout(resolve, 20000));
 
         console.log("Requesting Frame to stop audio stream...");
-        await frame.sendMessage(0x30, new TxCode(0).pack());
+        await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack());
 
         await shutdownPromise; // Wait until shutdown is signaled
 
@@ -864,7 +885,7 @@ export async function run() {
         if (frame && frame.isConnected()) {
             try {
                 console.log("Requesting Frame to stop audio stream...");
-                await frame.sendMessage(0x30, new TxCode(0).pack());
+                await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack());
             } catch (e) {
                 console.error("Error sending stop audio command to Frame:", e);
             }
@@ -1064,7 +1085,15 @@ app_loop()
 import { FrameMsg, StdLua, TxCaptureSettings, TxAutoExpSettings, RxPhoto, RxAutoExpResult, TxCode } from 'frame-msg';
 import frameApp from './lua/auto_exposure_frame_app.lua?raw';
 
-// Take a sequence of photos using the Frame camera with custom auto exposure settings and display it
+/**
+ * Demonstrates taking a sequence of photos using the Frame camera with custom auto exposure settings.
+ * This example showcases:
+ * - Setting initial auto exposure parameters using `TxAutoExpSettings`.
+ * - Receiving detailed auto exposure algorithm outputs via `RxAutoExpResult`.
+ * - Iteratively triggering single steps of the auto exposure algorithm on the Frame device.
+ * - Capturing photos after each step using `TxCaptureSettings` to request the image and `RxPhoto` to receive it.
+ * - Displaying the captured photos on a web page.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -1108,7 +1137,7 @@ export async function run() {
 
     // take the default auto exposure settings
     // and send them to Frame before iterating over the auto exposure steps
-    await frame.sendMessage(0x0e, new TxAutoExpSettings().pack());
+    await frame.sendMessage(0x0e, new TxAutoExpSettings({}).pack());
 
     // create the element to display the photo
     const img = document.createElement('img');
@@ -1124,7 +1153,7 @@ export async function run() {
     // Iterate 20 times
     for (let i = 0; i < 20; i++) {
       // send the code to trigger the single step of the auto exposure algorithm
-      await frame.sendMessage(0x0f, new TxCode().pack());
+      await frame.sendMessage(0x0f, new TxCode({}).pack());
 
       // receive the auto exposure output from Frame
       const autoExpResult = await autoExpQueue.get();
@@ -1134,8 +1163,7 @@ export async function run() {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Request the photo by sending a TxCaptureSettings message
-      // TODO should I use the {options} style for constructor parameters?
-      await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+      await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
       // get the jpeg bytes as soon as they're ready
       const jpegBytes = await photoQueue.get();
@@ -1279,7 +1307,13 @@ app_loop()
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/camera_frame_app.lua?raw';
 
-// Take a photo using the Frame camera and display it
+/**
+ * Demonstrates how to take a photo using the Frame camera and display it on a webpage.
+ * This example involves:
+ * - Sending `TxCaptureSettings` to the Frame device to request a photo.
+ * - Using `RxPhoto` to receive the JPEG image data from the Frame.
+ * - Displaying the captured photo within an HTML image element on the webpage.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -1323,7 +1357,7 @@ export async function run() {
     console.log("Taking photo...");
 
     // Request the photo by sending a TxCaptureSettings message
-    await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+    await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
     // get the jpeg bytes as soon as they're ready
     const jpegBytes = await photoQueue.get();
@@ -1467,7 +1501,16 @@ function displayImage(imageBytes, mimeType, divId) {
   }
 }
 
-// Take a photo using the Frame camera, send it to the host, and send it back as a sprite (TxImageSpriteBlock) to the Frame display
+/**
+ * Demonstrates a round-trip image manipulation workflow with a Frame device.
+ * This example involves:
+ * 1. Capturing a photo from the Frame camera using `TxCaptureSettings` to initiate and `RxPhoto` to receive the image data.
+ * 2. Displaying this original photo on the webpage.
+ * 3. Converting the received JPEG photo into a `TxSprite` using `TxSprite.fromImageBytes`, which involves resizing and color quantization.
+ * 4. Displaying the generated sprite (as a PNG) on the webpage for comparison.
+ * 5. Creating a `TxImageSpriteBlock` from this `TxSprite`, which splits the sprite into smaller, transmittable lines.
+ * 6. Sending this `TxImageSpriteBlock` (header first, then each sprite line) back to the Frame device for display on its screen.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -1511,7 +1554,7 @@ export async function run() {
     console.log("Taking photo...");
 
     // Request the photo by sending a TxCaptureSettings message
-    await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+    await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
     // get the jpeg bytes as soon as they're ready
     const jpegBytes = await photoQueue.get();
@@ -1527,7 +1570,7 @@ export async function run() {
     // display the sprite on the web page
     displayImage(sprite.toPngBytes(), 'image/png', 'image2');
 
-    const isb = new TxImageSpriteBlock(sprite, 20);
+    const isb = new TxImageSpriteBlock({ image: sprite, spriteLineHeight: 20 });
     // send the Image Sprite Block header
     await frame.sendMessage(0x20, isb.pack());
 
@@ -1678,7 +1721,13 @@ app_loop()
 import { FrameMsg, StdLua, TxCode } from 'frame-msg';
 import frameApp from './lua/code_value_frame_app.lua?raw';
 
-// Send a tiny TxCode message to Frame with a single-byte value as a control message
+/**
+ * Demonstrates sending a sequence of `TxCode` messages to a Frame device.
+ * Each `TxCode` message carries a single-byte value, which is iteratively updated.
+ * The corresponding Frame Lua application (`code_value_frame_app.lua`) is expected
+ * to receive these messages and print the contained value to its standard output.
+ * This example showcases a basic control message pattern.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -1714,7 +1763,7 @@ export async function run() {
 
     // iterate 10 times and sleep for 1 second between each iteration
     for (let i = 1; i <= 10; i++) {
-      await frame.sendMessage(0x42, new TxCode(i).pack());
+      await frame.sendMessage(0x42, new TxCode({ value: i }).pack());
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
@@ -1807,7 +1856,15 @@ app_loop()
 import { FrameMsg, StdLua, TxCode, RxIMU } from 'frame-msg';
 import frameApp from './lua/imu_stream_frame_app.lua?raw';
 
-// Stream IMU updates from Frame and print them to the console
+/**
+ * Demonstrates streaming Inertial Measurement Unit (IMU) data from a Frame device.
+ * This example involves:
+ * - Sending `TxCode` messages to start and stop the IMU data stream on the Frame device.
+ * - Using `RxIMU` to receive IMU data, which includes compass and accelerometer readings.
+ * - Calculating pitch and roll from the accelerometer data.
+ * - Displaying the raw compass, accelerometer, and calculated pitch/roll values on the webpage.
+ * - Printing the received IMU data objects to the console.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -1847,7 +1904,7 @@ export async function run() {
 
     // Start the IMU updates
     console.log("Starting IMU stream...");
-    await frame.sendMessage(0x40, new TxCode(1).pack());
+    await frame.sendMessage(0x40, new TxCode({ value: 1 }).pack());
 
     // find the element to display the IMU data
     const imuDataDiv = document.getElementById('text1');
@@ -1876,7 +1933,7 @@ export async function run() {
     }
 
     console.log("Stopping IMU stream...");
-    await frame.sendMessage(0x40, new TxCode(0).pack());
+    await frame.sendMessage(0x40, new TxCode({ value: 0 }).pack());
 
     // stop the listener and clean up its resources
     rxIMU.detach(frame);
@@ -1988,7 +2045,14 @@ app_loop()
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/live_camera_feed_frame_app.lua?raw';
 
-// Take a sequence of photos using the Frame camera and display them
+/**
+ * Demonstrates capturing a sequence of photos from the Frame camera and displaying them
+ * on a webpage to create a live feed effect.
+ * This example involves:
+ * - Iteratively requesting photos from the Frame device using `TxCaptureSettings`.
+ * - Receiving the JPEG image data via `RxPhoto`.
+ * - Displaying each newly captured photo in an HTML image element, replacing the previous one.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2040,7 +2104,7 @@ export async function run() {
     // loop 20 times - take a photo and display it in the div
     for (let i = 0; i < 20; i++) {
       // Request the photo by sending a TxCaptureSettings message
-      await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+      await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
       // get the jpeg bytes as soon as they're ready
       const jpegBytes = await photoQueue.get();
@@ -2161,7 +2225,14 @@ app_loop()
 import { FrameMsg, StdLua, TxCaptureSettings, TxManualExpSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/manual_exposure_frame_app.lua?raw';
 
-// Take a photo using the Frame camera with manual exposure settings and display it
+/**
+ * Demonstrates taking a photo using the Frame camera with specific manual exposure settings.
+ * This example involves:
+ * - Sending `TxManualExpSettings` to the Frame device to configure parameters like shutter speed and gain.
+ * - Sending `TxCaptureSettings` to request the photo capture.
+ * - Using `RxPhoto` to receive the JPEG image data from the Frame.
+ * - Displaying the captured photo within an HTML image element on the webpage.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2201,14 +2272,14 @@ export async function run() {
 
     // take the default manual exposure settings
     // and send them to Frame before taking the photo
-    await frame.sendMessage(0x0c, new TxManualExpSettings().pack());
+    await frame.sendMessage(0x0c, new TxManualExpSettings({}).pack());
 
     // NOTE: it takes up to 200ms for manual camera settings to take effect!
     console.log("Waiting 200ms for manual exposure settings to take effect...");
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Request the photo by sending a TxCaptureSettings message
-    await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+    await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
     // get the jpeg bytes as soon as they're ready
     const jpegBytes = await photoQueue.get();
@@ -2340,7 +2411,14 @@ app_loop()
 import { FrameMsg, StdLua, TxCode, RxMeteringData } from 'frame-msg';
 import frameApp from './lua/metering_data_frame_app.lua?raw';
 
-// Request a sequence of light metering updates from Frame's camera and print them to the console
+/**
+ * Demonstrates requesting and displaying a sequence of light metering updates from Frame's camera.
+ * This example involves:
+ * - Sending `TxCode` messages to the Frame device to trigger light metering updates.
+ * - Using `RxMeteringData` to receive the metering data, which includes spot and matrix RGB values.
+ * - Displaying the received metering data (spot R,G,B and matrix R,G,B) on the webpage.
+ * - Printing the raw metering data objects to the console.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2389,7 +2467,7 @@ export async function run() {
 
     // loop 60 times - await for the metering data to be received then print it to the console
     for (let i = 0; i < 60; i++) {
-      await frame.sendMessage(0x12, new TxCode(1).pack());
+      await frame.sendMessage(0x12, new TxCode({ value: 1 }).pack());
       const data = await meteringDataQueue.get();
       console.log("Metering Data:", data);
 
@@ -2492,6 +2570,13 @@ app_loop()
 import { FrameMsg, StdLua, TxCode, RxTap } from 'frame-msg';
 import frameApp from './lua/multi_tap_frame_app.lua?raw';
 
+/**
+ * Demonstrates detecting and counting multi-tap events from a Frame device.
+ * This example involves:
+ * - Sending `TxCode` messages to the Frame device to subscribe to and later unsubscribe from tap events.
+ * - Using `RxTap` to receive and process tap events, which counts consecutive taps within a defined threshold.
+ * - Logging the detected tap counts to the console (e.g., "2-tap received", "3-tap received").
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2526,11 +2611,11 @@ export async function run() {
     await frame.startFrameApp();
 
     // hook up the RxTap receiver
-    var rxTap = new RxTap();
+    var rxTap = new RxTap({});
     var tapQueue = await rxTap.attach(frame);
 
     // Subscribe for tap events
-    await frame.sendMessage(0x10, new TxCode(1).pack());
+    await frame.sendMessage(0x10, new TxCode({ value: 1 }).pack());
 
     // iterate 10 times
     for (let i = 0; i < 10; i++) {
@@ -2540,7 +2625,7 @@ export async function run() {
     }
 
     // unsubscribe from tap events
-    await frame.sendMessage(0x10, new TxCode(0).pack());
+    await frame.sendMessage(0x10, new TxCode({ value: 0 }).pack());
 
     // stop the tap listener and clean up its resources
     rxTap.detach(frame);
@@ -2641,6 +2726,14 @@ app_loop()
 import { FrameMsg, StdLua, TxPlainText } from 'frame-msg';
 import frameApp from './lua/plain_text_frame_app.lua?raw';
 
+/**
+ * Demonstrates sending a sequence of plain text messages to a Frame device for display.
+ * This example involves:
+ * - Iteratively creating `TxPlainText` messages with varying text content and palette offsets (for different colors).
+ * - Sending these messages to the Frame device, where a corresponding Lua application is expected to handle
+ *   their display on the screen.
+ * - Includes a delay between messages to allow each text to be visible.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2678,11 +2771,11 @@ export async function run() {
     // Note that the frameside app is expecting a message of type TxPlainText on msgCode 0x0a
     const displayStrings = ["white", "gray", "red", "pink", "dark\nbrown", "brown", "orange", "yellow", "dark\ngreen", "green", "light\ngreen", "night\nblue", "sea\nblue", "sky\nblue", "cloud\nblue"];
     for (let i = 0; i < displayStrings.length; i++) {
-      await frame.sendMessage(0x0a, new TxPlainText(displayStrings[i], 50, 50, i+1).pack());
+      await frame.sendMessage(0x0a, new TxPlainText({ text: displayStrings[i], x: 50, y: 50, paletteOffset: i+1 }).pack());
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     }
     // clear the display
-    await frame.sendMessage(0x0a, new TxPlainText(" ").pack());
+    await frame.sendMessage(0x0a, new TxPlainText({ text: " " }).pack());
 
     // unhook the print handler
     frame.detachPrintResponseHandler()
@@ -2800,6 +2893,20 @@ function displayImage(imageBytes, mimeType, divId) {
   }
 }
 
+/**
+ * Demonstrates fetching a JPG image, converting it to a sprite format,
+ * and sending it to a Frame device for progressive display.
+ * This example involves:
+ * - Fetching a JPG image from a local path.
+ * - Displaying the original JPG image on the webpage.
+ * - Converting the JPG image data into a `TxSprite` object using `TxSprite.fromImageBytes`,
+ *   which includes resizing and color quantization.
+ * - Displaying the generated `TxSprite` (as a PNG) on the webpage for comparison.
+ * - Creating a `TxImageSpriteBlock` from the `TxSprite`, configured for progressive rendering.
+ *   This process splits the sprite into smaller, transmittable lines.
+ * - Sending the `TxImageSpriteBlock` (header first, then each sprite line) to the Frame device,
+ *   allowing the image to be rendered progressively on its screen.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -2846,7 +2953,7 @@ export async function run() {
     // display the sprite on the web page
     displayImage(sprite.toPngBytes(), 'image/png', 'image2');
 
-    const isb = new TxImageSpriteBlock(sprite, 20);
+    const isb = new TxImageSpriteBlock({ image: sprite, spriteLineHeight: 20 });
     // send the Image Sprite Block header
     await frame.sendMessage(0x20, isb.pack());
 
@@ -2964,6 +3071,16 @@ app_loop()
 import { FrameMsg, StdLua, TxSprite } from 'frame-msg';
 import frameApp from './lua/sprite_indexed_png_frame_app.lua?raw';
 
+/**
+ * Demonstrates fetching and displaying various indexed PNG images on a Frame device.
+ * This example involves:
+ * - Fetching a sequence of indexed PNG images (specifically 1-bit, 2-bit, and 4-bit) from local paths.
+ * - Converting each fetched PNG image directly into a `TxSprite` object using `TxSprite.fromIndexedPngBytes`.
+ *   This method preserves the original indexed color data without further quantization or resizing.
+ * - Sending each `TxSprite` to the Frame device, where a corresponding Lua application is expected
+ *   to handle its display on the screen.
+ * - Pausing between sending each sprite to allow time for viewing on the Frame device.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -3135,6 +3252,18 @@ function displayImage(imageBytes, mimeType, divId) {
   }
 }
 
+/**
+ * Demonstrates fetching a JPG image, converting it to a `TxSprite`, and sending it to a Frame device.
+ * This example involves:
+ * - Fetching a JPG image from a local path.
+ * - Displaying the original JPG image on the webpage.
+ * - Converting the JPG image data into a `TxSprite` object using `TxSprite.fromImageBytes`.
+ *   This process includes resizing the image and quantizing its colors to a limited palette.
+ * - Sending the entire packed `TxSprite` (header, palette, and pixel data) to the Frame device
+ *   in a single message.
+ * - Displaying the generated `TxSprite` (as a PNG) on the webpage for comparison with the original.
+ * - The Frame device is expected to display the received sprite.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -3279,6 +3408,17 @@ app_loop()
 import { FrameMsg, StdLua, TxSprite, TxSpriteCoords, TxCode } from 'frame-msg';
 import frameApp from './lua/sprite_move_frame_app.lua?raw';
 
+/**
+ * Demonstrates sending a sprite to a Frame device and then moving it to random positions.
+ * This example involves:
+ * - Fetching an indexed PNG image and converting it to a `TxSprite` using `TxSprite.fromIndexedPngBytes`.
+ * - Sending this initial `TxSprite` to the Frame device.
+ * - Iteratively:
+ *   - Generating random X and Y coordinates.
+ *   - Sending these coordinates to the Frame device using a `TxSpriteCoords` message.
+ *   - Sending a `TxCode` message to trigger the Frame device to redraw the sprite at the new coordinates.
+ * - A short pause is included in each iteration to make the movement visible.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -3324,11 +3464,11 @@ export async function run() {
     for (let i = 0; i < 20; i++) {
       const x = Math.floor(Math.random() * 441);
       const y = Math.floor(Math.random() * 201);
-      const coords = new TxSpriteCoords(0x20, x, y, 0);
+      const coords = new TxSpriteCoords({ code: 0x20, x: x, y: y, offset: 0 });
       await frame.sendMessage(0x40, coords.pack());
 
       // draw the sprite
-      await frame.sendMessage(0x50, new TxCode().pack());
+      await frame.sendMessage(0x50, new TxCode({}).pack());
 
       // sleep for 1s to allow the user to see the image
       await new Promise(resolve => setTimeout(resolve, 1000));

@@ -7,7 +7,7 @@ export interface TxCodeOptions {
 }
 
 /**
- * A simple message containing only a message code and an optional byte value.
+ * A simple message containing only an optional byte value.
  * Used for signaling the frameside app to take some action.
  */
 export class TxCode {

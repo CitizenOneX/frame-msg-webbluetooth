@@ -234,16 +234,6 @@ export class TxSprite {
         let finalPixelData = packedPixels;
         if (this.compress) {
             try {
-                // Assuming your 'lz4js' import 'lz4' and its 'compress' method are correct for your setup.
-                // The second parameter for compression level might need to be an options object
-                // depending on the exact lz4 library version/fork you are using.
-                // e.g., for ukyo/lz4.js: finalPixelData = lz4.compress(packedPixels, { preferences: { compressionLevel: 9 } });
-                // For now, using your existing call style:
-                // If this `lz4.compress` is from 'lz4js' (ukyo/lz4.js), the signature is likely (data, options).
-                // The original python-lz4 `compression_level=9` is a high compression setting.
-                // `ukyo/lz4.js` uses `preferences: { compressionLevel: number (0-16) }`
-                 // If your `lz4.compress(data, level)` is from a different lz4 lib that takes level directly, this is fine.
-                 // Otherwise, it should be:
                 finalPixelData = lz4.compress(Buffer.from(packedPixels), 9);
 
             } catch (e) {

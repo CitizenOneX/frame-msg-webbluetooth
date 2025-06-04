@@ -36,14 +36,14 @@ export async function run() {
     await frame.startFrameApp();
 
     // hook up the RxPhoto receiver
-    const rxPhoto = new RxPhoto();
+    const rxPhoto = new RxPhoto({});
     const photoQueue = await rxPhoto.attach(frame);
 
     // give Frame some time for the autoexposure to settle
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Request the photo by sending a TxCaptureSettings message
-    await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+    await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
     const jpegBytes = await photoQueue.get();
 

@@ -1,3 +1,11 @@
+## 1.0.0
+
+* Breaking: added Options interfaces for all Rx and Tx class constructors for consistency
+* Breaking: updated all "flag" references in JS and Lua to msgCode and msg_code for consistency
+* Updated frame-ble dependency to 0.3.1
+* Example: fixed an off-by-one bug in sprite-move.js
+* Cleaned up some comments
+
 ## 0.3.1
 
 * Added `toPngBytes()` to `TxSprite` for debugging and visualization of quantized images

@@ -1,4 +1,18 @@
 /**
+ * Options for configuring camera capture settings.
+ */
+export interface TxCaptureSettingsOptions {
+    /** Optional image resolution (256-720, must be even). Defaults to 512. */
+    resolution?: number;
+    /** Optional index into JPEG quality array [VERY_LOW, LOW, MEDIUM, HIGH, VERY_HIGH] (0-4). Defaults to 4 (VERY_HIGH). */
+    qualityIndex?: number;
+    /** Optional image pan value (-140 to 140). Defaults to 0. */
+    pan?: number;
+    /** Optional flag whether to capture in RAW (headerless JPEG) format. Defaults to false. */
+    raw?: boolean;
+}
+
+/**
  * Message for camera capture settings.
  */
 export class TxCaptureSettings {
@@ -20,21 +34,14 @@ export class TxCaptureSettings {
     public raw: boolean;
 
     /**
-     * @param resolution Image resolution (256-720, must be even). Defaults to 512.
-     * @param qualityIndex Index into [VERY_LOW, LOW, MEDIUM, HIGH, VERY_HIGH]. Defaults to 4.
-     * @param pan Image pan value (-140 to 140). Defaults to 0.
-     * @param raw Whether to return the JPEG in raw (headerless) format. Defaults to false.
+     * Constructs an instance of TxCaptureSettings.
+     * @param options Configuration options for the capture settings.
      */
-    constructor(
-        resolution: number = 512,
-        qualityIndex: number = 4,
-        pan: number = 0,
-        raw: boolean = false
-    ) {
-        this.resolution = resolution;
-        this.qualityIndex = qualityIndex;
-        this.pan = pan;
-        this.raw = raw;
+    constructor(options: TxCaptureSettingsOptions = {}) {
+        this.resolution = options.resolution ?? 512;
+        this.qualityIndex = options.qualityIndex ?? 4;
+        this.pan = options.pan ?? 0;
+        this.raw = options.raw ?? false;
     }
 
     /**

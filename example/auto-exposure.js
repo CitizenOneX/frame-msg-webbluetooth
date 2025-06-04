@@ -1,7 +1,15 @@
 import { FrameMsg, StdLua, TxCaptureSettings, TxAutoExpSettings, RxPhoto, RxAutoExpResult, TxCode } from 'frame-msg';
 import frameApp from './lua/auto_exposure_frame_app.lua?raw';
 
-// Take a sequence of photos using the Frame camera with custom auto exposure settings and display it
+/**
+ * Demonstrates taking a sequence of photos using the Frame camera with custom auto exposure settings.
+ * This example showcases:
+ * - Setting initial auto exposure parameters using `TxAutoExpSettings`.
+ * - Receiving detailed auto exposure algorithm outputs via `RxAutoExpResult`.
+ * - Iteratively triggering single steps of the auto exposure algorithm on the Frame device.
+ * - Capturing photos after each step using `TxCaptureSettings` to request the image and `RxPhoto` to receive it.
+ * - Displaying the captured photos on a web page.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -45,7 +53,7 @@ export async function run() {
 
     // take the default auto exposure settings
     // and send them to Frame before iterating over the auto exposure steps
-    await frame.sendMessage(0x0e, new TxAutoExpSettings().pack());
+    await frame.sendMessage(0x0e, new TxAutoExpSettings({}).pack());
 
     // create the element to display the photo
     const img = document.createElement('img');
@@ -61,7 +69,7 @@ export async function run() {
     // Iterate 20 times
     for (let i = 0; i < 20; i++) {
       // send the code to trigger the single step of the auto exposure algorithm
-      await frame.sendMessage(0x0f, new TxCode().pack());
+      await frame.sendMessage(0x0f, new TxCode({}).pack());
 
       // receive the auto exposure output from Frame
       const autoExpResult = await autoExpQueue.get();
@@ -71,8 +79,7 @@ export async function run() {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Request the photo by sending a TxCaptureSettings message
-      // TODO should I use the {options} style for constructor parameters?
-      await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+      await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
       // get the jpeg bytes as soon as they're ready
       const jpegBytes = await photoQueue.get();

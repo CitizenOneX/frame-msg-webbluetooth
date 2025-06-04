@@ -1,7 +1,13 @@
 import { FrameMsg, StdLua, TxCaptureSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/camera_frame_app.lua?raw';
 
-// Take a photo using the Frame camera and display it
+/**
+ * Demonstrates how to take a photo using the Frame camera and display it on a webpage.
+ * This example involves:
+ * - Sending `TxCaptureSettings` to the Frame device to request a photo.
+ * - Using `RxPhoto` to receive the JPEG image data from the Frame.
+ * - Displaying the captured photo within an HTML image element on the webpage.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -45,7 +51,7 @@ export async function run() {
     console.log("Taking photo...");
 
     // Request the photo by sending a TxCaptureSettings message
-    await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+    await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
     // get the jpeg bytes as soon as they're ready
     const jpegBytes = await photoQueue.get();

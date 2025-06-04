@@ -1,4 +1,24 @@
 /**
+ * Options for configuring auto exposure and gain settings.
+ */
+export interface TxAutoExpSettingsOptions {
+    /** Optional zero-based index into metering modes ['SPOT', 'CENTER_WEIGHTED', 'AVERAGE'] (0, 1, or 2). Defaults to 1 (CENTER_WEIGHTED). */
+    meteringIndex?: number;
+    /** Optional target exposure value (0.0-1.0). Defaults to 0.1. */
+    exposure?: number;
+    /** Optional speed of exposure adjustments (0.0-1.0). Defaults to 0.45. */
+    exposureSpeed?: number;
+    /** Optional maximum shutter value (4-16383). Defaults to 16383. */
+    shutterLimit?: number;
+    /** Optional maximum analog gain value (1-248). Defaults to 16. */
+    analogGainLimit?: number;
+    /** Optional speed of white balance adjustments (0.0-1.0). Defaults to 0.5. */
+    whiteBalanceSpeed?: number;
+    /** Optional maximum gain value for red, green, blue channels (0-1023). Defaults to 287. */
+    rgbGainLimit?: number;
+}
+
+/**
  * Message for auto exposure and gain settings.
  */
 export class TxAutoExpSettings {
@@ -32,30 +52,17 @@ export class TxAutoExpSettings {
     public rgbGainLimit: number;
 
     /**
-     * @param meteringIndex Zero-based index into ['SPOT', 'CENTER_WEIGHTED', 'AVERAGE']. Defaults to 1.
-     * @param exposure Target exposure value (0.0-1.0). Defaults to 0.1.
-     * @param exposureSpeed Speed of exposure adjustments (0.0-1.0). Defaults to 0.45.
-     * @param shutterLimit Maximum shutter value (4-16383). Defaults to 16383.
-     * @param analogGainLimit Maximum analog gain value (1-248). Defaults to 16.
-     * @param whiteBalanceSpeed Speed of white balance adjustments (0.0-1.0). Defaults to 0.5.
-     * @param rgbGainLimit Maximum gain value for red, green, blue channels (0-1023). Defaults to 287.
+     * Constructs an instance of TxAutoExpSettings.
+     * @param options Configuration options for auto exposure and gain settings.
      */
-    constructor(
-        meteringIndex: number = 1,
-        exposure: number = 0.1,
-        exposureSpeed: number = 0.45,
-        shutterLimit: number = 16383,
-        analogGainLimit: number = 16,
-        whiteBalanceSpeed: number = 0.5,
-        rgbGainLimit: number = 287
-    ) {
-        this.meteringIndex = meteringIndex;
-        this.exposure = exposure;
-        this.exposureSpeed = exposureSpeed;
-        this.shutterLimit = shutterLimit;
-        this.analogGainLimit = analogGainLimit;
-        this.whiteBalanceSpeed = whiteBalanceSpeed;
-        this.rgbGainLimit = rgbGainLimit;
+    constructor(options: TxAutoExpSettingsOptions = {}) {
+        this.meteringIndex = options.meteringIndex ?? 1;
+        this.exposure = options.exposure ?? 0.1;
+        this.exposureSpeed = options.exposureSpeed ?? 0.45;
+        this.shutterLimit = options.shutterLimit ?? 16383;
+        this.analogGainLimit = options.analogGainLimit ?? 16;
+        this.whiteBalanceSpeed = options.whiteBalanceSpeed ?? 0.5;
+        this.rgbGainLimit = options.rgbGainLimit ?? 287;
     }
 
     /**

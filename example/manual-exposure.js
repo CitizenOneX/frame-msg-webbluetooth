@@ -1,7 +1,14 @@
 import { FrameMsg, StdLua, TxCaptureSettings, TxManualExpSettings, RxPhoto } from 'frame-msg';
 import frameApp from './lua/manual_exposure_frame_app.lua?raw';
 
-// Take a photo using the Frame camera with manual exposure settings and display it
+/**
+ * Demonstrates taking a photo using the Frame camera with specific manual exposure settings.
+ * This example involves:
+ * - Sending `TxManualExpSettings` to the Frame device to configure parameters like shutter speed and gain.
+ * - Sending `TxCaptureSettings` to request the photo capture.
+ * - Using `RxPhoto` to receive the JPEG image data from the Frame.
+ * - Displaying the captured photo within an HTML image element on the webpage.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -41,14 +48,14 @@ export async function run() {
 
     // take the default manual exposure settings
     // and send them to Frame before taking the photo
-    await frame.sendMessage(0x0c, new TxManualExpSettings().pack());
+    await frame.sendMessage(0x0c, new TxManualExpSettings({}).pack());
 
     // NOTE: it takes up to 200ms for manual camera settings to take effect!
     console.log("Waiting 200ms for manual exposure settings to take effect...");
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Request the photo by sending a TxCaptureSettings message
-    await frame.sendMessage(0x0d, new TxCaptureSettings().pack());
+    await frame.sendMessage(0x0d, new TxCaptureSettings({}).pack());
 
     // get the jpeg bytes as soon as they're ready
     const jpegBytes = await photoQueue.get();

@@ -1,4 +1,18 @@
 /**
+ * Options for configuring sprite coordinates.
+ */
+export interface TxSpriteCoordsOptions {
+    /** Unsigned byte identifying the sprite code. */
+    code: number;
+    /** X-coordinate for sprite position (1-640). */
+    x: number;
+    /** Y-coordinate for sprite position (1-400). */
+    y: number;
+    /** Optional palette offset value for the sprite (0-15). Defaults to 0. */
+    offset?: number;
+}
+
+/**
  * A message containing sprite coordinates information for display.
  */
 export class TxSpriteCoords {
@@ -20,21 +34,14 @@ export class TxSpriteCoords {
     public offset: number;
 
     /**
-     * @param code Unsigned byte identifying the sprite code.
-     * @param x X-coordinate for sprite position (1..640).
-     * @param y Y-coordinate for sprite position (1..400).
-     * @param offset Palette offset value for the sprite (0..15). Defaults to 0.
+     * Constructs an instance of TxSpriteCoords.
+     * @param options Configuration options for the sprite coordinates.
      */
-    constructor(
-        code: number,
-        x: number,
-        y: number,
-        offset: number = 0
-    ) {
-        this.code = code;
-        this.x = x;
-        this.y = y;
-        this.offset = offset;
+    constructor(options: TxSpriteCoordsOptions) {
+        this.code = options.code;
+        this.x = options.x;
+        this.y = options.y;
+        this.offset = options.offset ?? 0;
     }
 
     /**

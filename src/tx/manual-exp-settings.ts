@@ -1,4 +1,20 @@
 /**
+ * Options for configuring manual exposure and gain settings.
+ */
+export interface TxManualExpSettingsOptions {
+    /** Optional shutter value (4-16383). Defaults to 3072. */
+    manualShutter?: number;
+    /** Optional analog gain value (1-248). Defaults to 16. */
+    manualAnalogGain?: number;
+    /** Optional red gain value (0-1023). Defaults to 121. */
+    manualRedGain?: number;
+    /** Optional green gain value (0-1023). Defaults to 64. */
+    manualGreenGain?: number;
+    /** Optional blue gain value (0-1023). Defaults to 140. */
+    manualBlueGain?: number;
+}
+
+/**
  * Message for manual exposure and gain settings.
  */
 export class TxManualExpSettings {
@@ -24,24 +40,15 @@ export class TxManualExpSettings {
     public manualBlueGain: number;
 
     /**
-     * @param manualShutter Shutter value (4-16383). Defaults to 3072.
-     * @param manualAnalogGain Analog gain value (1-248). Defaults to 16.
-     * @param manualRedGain Red gain value (0-1023). Defaults to 121.
-     * @param manualGreenGain Green gain value (0-1023). Defaults to 64.
-     * @param manualBlueGain Blue gain value (0-1023). Defaults to 140.
+     * Constructs an instance of TxManualExpSettings.
+     * @param options Configuration options for manual exposure and gain settings.
      */
-    constructor(
-        manualShutter: number = 3072,
-        manualAnalogGain: number = 16,
-        manualRedGain: number = 121,
-        manualGreenGain: number = 64,
-        manualBlueGain: number = 140
-    ) {
-        this.manualShutter = manualShutter;
-        this.manualAnalogGain = manualAnalogGain;
-        this.manualRedGain = manualRedGain;
-        this.manualGreenGain = manualGreenGain;
-        this.manualBlueGain = manualBlueGain;
+    constructor(options: TxManualExpSettingsOptions = {}) {
+        this.manualShutter = options.manualShutter ?? 3072;
+        this.manualAnalogGain = options.manualAnalogGain ?? 16;
+        this.manualRedGain = options.manualRedGain ?? 121;
+        this.manualGreenGain = options.manualGreenGain ?? 64;
+        this.manualBlueGain = options.manualBlueGain ?? 140;
     }
 
     /**

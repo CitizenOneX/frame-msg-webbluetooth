@@ -15,36 +15,57 @@ interface RGBColor {
 // ProcessedImage interface remains the same
 
 /**
+ * Options for creating a TxSprite instance.
+ */
+export interface TxSpriteOptions {
+    /** The width of the sprite in pixels. */
+    width: number;
+    /** The height of the sprite in pixels. */
+    height: number;
+    /** The number of colors in the sprite's palette. */
+    numColors: number;
+    /** The palette data as a flat Uint8Array of RGB values. */
+    paletteData: Uint8Array;
+    /** The pixel data as a Uint8Array of palette indices. */
+    pixelData: Uint8Array;
+    /** Optional flag whether to compress the pixel data using LZ4. Defaults to false. */
+    compress?: boolean;
+}
+
+/**
  * A sprite message containing image data with a custom palette.
  */
 export class TxSprite {
+    /** The width of the sprite in pixels. */
     public width: number;
+    /** The height of the sprite in pixels. */
     public height: number;
+    /** The number of colors in the sprite's palette. */
     public numColors: number;
+    /** The palette data as a flat Uint8Array of RGB values. */
     public paletteData: Uint8Array;
+    /** The pixel data as a Uint8Array of palette indices. */
     public pixelData: Uint8Array;
+    /** Whether the pixel data is compressed using LZ4. */
     public compress: boolean;
 
-    constructor(
-        width: number,
-        height: number,
-        numColors: number,
-        paletteData: Uint8Array,
-        pixelData: Uint8Array,
-        compress: boolean = false
-    ) {
-        this.width = width;
-        this.height = height;
-        this.numColors = numColors;
-        this.paletteData = paletteData;
-        this.pixelData = pixelData;
-        this.compress = compress;
+    /**
+     * Creates an instance of TxSprite.
+     * @param options Configuration options for the sprite.
+     */
+    constructor(options: TxSpriteOptions) {
+        this.width = options.width;
+        this.height = options.height;
+        this.numColors = options.numColors;
+        this.paletteData = options.paletteData;
+        this.pixelData = options.pixelData;
+        this.compress = options.compress ?? false;
 
-        if (paletteData.length / 3 !== numColors && numColors > 0) {
-            console.warn(`TxSprite constructor: numColors (${numColors}) does not match paletteData length (${paletteData.length / 3} colors).`);
+        if (this.paletteData.length / 3 !== this.numColors && this.numColors > 0) {
+            console.warn(`TxSprite constructor: numColors (${this.numColors}) does not match paletteData length (${this.paletteData.length / 3} colors).`);
         }
-        if (pixelData.length !== width * height && width * height > 0) {
-            console.warn(`TxSprite constructor: pixelData length (${pixelData.length}) does not match width*height (${width*height}).`);
+        if (this.pixelData.length !== this.width * this.height && this.width * this.height > 0) {
+            console.warn(`TxSprite constructor: pixelData length (${this.pixelData.length}) does not match width*height (${this.width*this.height}).`);
         }
     }
 
@@ -61,14 +82,14 @@ export class TxSprite {
         const { width, height, data, ctype, tabs } = png;
         console.log(`PNG dimensions: ${width}x${height}, data length: ${data.byteLength}, ctype: ${ctype}, PLTE: ${tabs.PLTE}`);
 
-        return new TxSprite(
+        return new TxSprite({
             width,
             height,
-            tabs.PLTE ? tabs.PLTE.length / 3 : 0, // Number of colors in the palette
-            tabs.PLTE ? new Uint8Array(tabs.PLTE) : new Uint8Array(), // Palette data
-            new Uint8Array(data.slice(0, width * height)), // Pixel data (palette indices)
+            numColors: tabs.PLTE ? tabs.PLTE.length / 3 : 0, // Number of colors in the palette
+            paletteData: tabs.PLTE ? new Uint8Array(tabs.PLTE) : new Uint8Array(), // Palette data
+            pixelData: new Uint8Array(data.slice(0, width * height)), // Pixel data (palette indices)
             compress
-        );
+        });
     }
 
     /**
@@ -148,16 +169,19 @@ export class TxSprite {
             console.log(`Color ${i}: R=${colorPoint.r}, G=${colorPoint.g}, B=${colorPoint.b}`);
         });
 
-        return new TxSprite(
-            image.width,
-            image.height,
-            actualNumColors,
+        return new TxSprite({
+            width: image.width,
+            height: image.height,
+            numColors: actualNumColors,
             paletteData,
-            indexedPixels,
+            pixelData: indexedPixels,
             compress
-        );
+        });
     }
 
+    /**
+     * The number of bits per pixel, derived from the number of colors.
+     */
     get bpp(): number {
         if (this.numColors <= 0) {
             return 4;
@@ -174,6 +198,12 @@ export class TxSprite {
         }
     }
 
+    /**
+     * Packs the sprite data into a compact binary format.
+     * The format includes a header, palette data, and packed pixel data.
+     * Pixel data can be optionally compressed using LZ4.
+     * @returns A Uint8Array containing the packed sprite data.
+     */
     pack(): Uint8Array {
         let packedPixels: Uint8Array;
         const currentBpp = this.bpp;
@@ -230,6 +260,9 @@ export class TxSprite {
         return result;
     }
 
+    /**
+     * Packs pixel data into 1-bit per pixel format.
+     */
     private static _pack_1bit(data: Uint8Array): Uint8Array {
         const packedLength = Math.ceil(data.length / 8);
         const packed = new Uint8Array(packedLength);
@@ -243,6 +276,9 @@ export class TxSprite {
         return packed;
     }
 
+    /**
+     * Packs pixel data into 2-bits per pixel format.
+     */
     private static _pack_2bit(data: Uint8Array): Uint8Array {
         const packedLength = Math.ceil(data.length / 4);
         const packed = new Uint8Array(packedLength);
@@ -254,6 +290,9 @@ export class TxSprite {
         return packed;
     }
 
+    /**
+     * Packs pixel data into 4-bits per pixel format.
+     */
     private static _pack_4bit(data: Uint8Array): Uint8Array {
         const packedLength = Math.ceil(data.length / 2);
         const packed = new Uint8Array(packedLength);

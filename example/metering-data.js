@@ -1,7 +1,14 @@
 import { FrameMsg, StdLua, TxCode, RxMeteringData } from 'frame-msg';
 import frameApp from './lua/metering_data_frame_app.lua?raw';
 
-// Request a sequence of light metering updates from Frame's camera and print them to the console
+/**
+ * Demonstrates requesting and displaying a sequence of light metering updates from Frame's camera.
+ * This example involves:
+ * - Sending `TxCode` messages to the Frame device to trigger light metering updates.
+ * - Using `RxMeteringData` to receive the metering data, which includes spot and matrix RGB values.
+ * - Displaying the received metering data (spot R,G,B and matrix R,G,B) on the webpage.
+ * - Printing the raw metering data objects to the console.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -50,7 +57,7 @@ export async function run() {
 
     // loop 60 times - await for the metering data to be received then print it to the console
     for (let i = 0; i < 60; i++) {
-      await frame.sendMessage(0x12, new TxCode(1).pack());
+      await frame.sendMessage(0x12, new TxCode({ value: 1 }).pack());
       const data = await meteringDataQueue.get();
       console.log("Metering Data:", data);
 

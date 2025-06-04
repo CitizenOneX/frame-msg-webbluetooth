@@ -1,6 +1,17 @@
 import { FrameMsg, StdLua, TxSprite, TxSpriteCoords, TxCode } from 'frame-msg';
 import frameApp from './lua/sprite_move_frame_app.lua?raw';
 
+/**
+ * Demonstrates sending a sprite to a Frame device and then moving it to random positions.
+ * This example involves:
+ * - Fetching an indexed PNG image and converting it to a `TxSprite` using `TxSprite.fromIndexedPngBytes`.
+ * - Sending this initial `TxSprite` to the Frame device.
+ * - Iteratively:
+ *   - Generating random X and Y coordinates.
+ *   - Sending these coordinates to the Frame device using a `TxSpriteCoords` message.
+ *   - Sending a `TxCode` message to trigger the Frame device to redraw the sprite at the new coordinates.
+ * - A short pause is included in each iteration to make the movement visible.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -46,11 +57,11 @@ export async function run() {
     for (let i = 0; i < 20; i++) {
       const x = Math.floor(Math.random() * 441);
       const y = Math.floor(Math.random() * 201);
-      const coords = new TxSpriteCoords(0x20, x, y, 0);
+      const coords = new TxSpriteCoords({ code: 0x20, x: x, y: y, offset: 0 });
       await frame.sendMessage(0x40, coords.pack());
 
       // draw the sprite
-      await frame.sendMessage(0x50, new TxCode().pack());
+      await frame.sendMessage(0x50, new TxCode({}).pack());
 
       // sleep for 1s to allow the user to see the image
       await new Promise(resolve => setTimeout(resolve, 1000));

@@ -17,6 +17,18 @@ function displayImage(imageBytes, mimeType, divId) {
   }
 }
 
+/**
+ * Demonstrates fetching a JPG image, converting it to a `TxSprite`, and sending it to a Frame device.
+ * This example involves:
+ * - Fetching a JPG image from a local path.
+ * - Displaying the original JPG image on the webpage.
+ * - Converting the JPG image data into a `TxSprite` object using `TxSprite.fromImageBytes`.
+ *   This process includes resizing the image and quantizing its colors to a limited palette.
+ * - Sending the entire packed `TxSprite` (header, palette, and pixel data) to the Frame device
+ *   in a single message.
+ * - Displaying the generated `TxSprite` (as a PNG) on the webpage for comparison with the original.
+ * - The Frame device is expected to display the received sprite.
+ */
 export async function run() {
   const frame = new FrameMsg();
 

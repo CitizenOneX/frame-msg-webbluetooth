@@ -1,8 +1,12 @@
 import { FrameMsg, StdLua, RxAudio, TxCode, RxAudioSampleRate, RxAudioBitDepth } from 'frame-msg';
 import frameApp from './lua/audio_clip_frame_app.lua?raw';
 
-// Record an audio clip using Frame's microphone and play it back
-// This example uses the RxAudio class to receive audio data from Frame
+/**
+ * Demonstrates how to record an audio clip using Frame's microphone and play it back.
+ * This example utilizes the RxAudio class to receive audio data from the Frame device
+ * in non-streaming mode, then converts the raw PCM data to WAV format for playback
+ * using the Web Audio API.
+ */
 export async function run() {
   const frame = new FrameMsg();
 
@@ -42,7 +46,7 @@ export async function run() {
 
     // Tell Frame to start streaming audio
     // Assuming 0x30 is the correct message ID and new TxCode(1).pack() is the start command
-    await frame.sendMessage(0x30, new TxCode(1).pack());
+    await frame.sendMessage(0x30, new TxCode({ value: 1 }).pack());
 
     console.log("Recording audio for 10 seconds...");
     await new Promise(resolve => setTimeout(resolve, 10000));
@@ -50,7 +54,7 @@ export async function run() {
     // Stop the audio stream
     console.log("Stopping audio...");
     // Assuming new TxCode(0).pack() is the stop command
-    await frame.sendMessage(0x30, new TxCode(0).pack());
+    await frame.sendMessage(0x30, new TxCode({ value: 0 }).pack());
 
     // Get the raw PCM audio data from RxAudio
     // RxAudio (non-streaming) puts the complete audio data first, then null

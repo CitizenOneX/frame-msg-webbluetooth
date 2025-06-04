@@ -20,12 +20,18 @@ export interface TxTextSpriteBlockOptions {
  * A block of text rendered as sprites, for use in a browser environment.
  */
 export class TxTextSpriteBlock {
+    /** The width constraint for the text layout, in pixels. */
     public width: number;
+    /** The font size used for rendering the text, in pixels. */
     public fontSize: number;
+    /** The maximum number of rows of text to be displayed. */
     public maxDisplayRows: number;
+    /** The raw text content to be rendered. */
     public text: string;
+    /** The font family used for rendering the text. */
     public fontFamily: string;
 
+    /** An array of {@link TxSprite} instances, each representing a line of rendered text. */
     public sprites: TxSprite[] = [];
 
     /**
@@ -143,14 +149,14 @@ export class TxTextSpriteBlock {
                     spritePixelData[j] = (croppedData[i] > 127) ? 1 : 0;
                 }
 
-                const textLineSprite = new TxSprite(
-                    finalSpriteWidth,
-                    finalSpriteHeight,
-                    2,
-                    new Uint8Array([0, 0, 0, 255, 255, 255]),
-                    spritePixelData,
-                    false
-                );
+                const textLineSprite = new TxSprite({
+                    width: finalSpriteWidth,
+                    height: finalSpriteHeight,
+                    numColors: 2,
+                    paletteData: new Uint8Array([0, 0, 0, 255, 255, 255]),
+                    pixelData: spritePixelData,
+                    compress: false
+            });
                 this.sprites.push(textLineSprite);
             }
         }

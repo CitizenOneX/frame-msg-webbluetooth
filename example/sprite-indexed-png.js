@@ -1,6 +1,16 @@
 import { FrameMsg, StdLua, TxSprite } from 'frame-msg';
 import frameApp from './lua/sprite_indexed_png_frame_app.lua?raw';
 
+/**
+ * Demonstrates fetching and displaying various indexed PNG images on a Frame device.
+ * This example involves:
+ * - Fetching a sequence of indexed PNG images (specifically 1-bit, 2-bit, and 4-bit) from local paths.
+ * - Converting each fetched PNG image directly into a `TxSprite` object using `TxSprite.fromIndexedPngBytes`.
+ *   This method preserves the original indexed color data without further quantization or resizing.
+ * - Sending each `TxSprite` to the Frame device, where a corresponding Lua application is expected
+ *   to handle its display on the screen.
+ * - Pausing between sending each sprite to allow time for viewing on the Frame device.
+ */
 export async function run() {
   const frame = new FrameMsg();
 

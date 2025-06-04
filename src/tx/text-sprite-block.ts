@@ -149,14 +149,14 @@ export class TxTextSpriteBlock {
                     spritePixelData[j] = (croppedData[i] > 127) ? 1 : 0;
                 }
 
-                const textLineSprite = new TxSprite(
-                    finalSpriteWidth,
-                    finalSpriteHeight,
-                    2,
-                    new Uint8Array([0, 0, 0, 255, 255, 255]),
-                    spritePixelData,
-                    false
-                );
+                const textLineSprite = new TxSprite({
+                    width: finalSpriteWidth,
+                    height: finalSpriteHeight,
+                    numColors: 2,
+                    paletteData: new Uint8Array([0, 0, 0, 255, 255, 255]),
+                    pixelData: spritePixelData,
+                    compress: false
+            });
                 this.sprites.push(textLineSprite);
             }
         }
